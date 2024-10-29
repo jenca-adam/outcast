@@ -1,0 +1,21 @@
+Názov tímu: only trying
+Názov hry: Cast Away
+Software: Python(pygame-ce, pygame-gui), C(CPython Extension API)
+Obrázky:
+
+1. Pozadie
+  - https://www.publicdomainpictures.net/pictures/460000/velka/image-16577056933Xv.png
+  -Autor  James Webb Space Telescope JWST - NASA, ESA, CSA, STScI
+  -Licencia CC0
+
+Hudba:
+
+1. theme-violin.mp3
+
+  -Vytvorené mnou v MuseScore Studio 4
+  - https://musescore.com/user/35753163/scores/21313327
+  - Licencia CC-BY-SA
+2. announcement.wav
+
+  -Vytvorené pomocou elevenlabs.io AI (hlas George)
+  
