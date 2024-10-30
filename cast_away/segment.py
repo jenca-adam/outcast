@@ -1,4 +1,3 @@
-import time
 import pygame
 import pygame_gui
 import random
@@ -23,7 +22,7 @@ def add_segment(segment_name):
 def _segment_intro(engine):
     engine.scene_3d.objects = []
     horn = loader.MODELS["horn"]
-    announcement = loader.SOUNDS["announcement.wav"]
+    announcement = loader.SOUNDS["announcement.mp3"]
     music = loader.SOUNDS["theme_violin.mp3"]
     buildup = loader.SOUNDS["buildup.mp3"]
     titlefont = loader.FONTS[("airstrikeacad.ttf", 96)]
@@ -107,10 +106,10 @@ def _segment_destination_select(engine):
 
 @add_segment("main_game_intro")
 def _segment_main_game_intro(engine):
-    engine.scene_3d.set_kwarg("backface_culling", False)  # dirty fix
+    engine.scene_3d.set_kwargs(backface_culling=False)  # dirty fix
     engine.scene_3d.objects = []
     enemy_ship = loader.MODELS["enemy_ship"]
-    police_siren = loader.SOUNDS["police-siren.wav"]
+    police_siren = loader.SOUNDS["police-siren.mp3"]
     metal = loader.SOUNDS["metal.mp3"]
     metal.play()
     runfont = loader.FONTS[("airstrikeacad.ttf", 96)]
@@ -159,7 +158,8 @@ def _segment_main_game(engine):
     engine.reset_wait_time()
     enemy_ship = loader.MODELS["enemy_ship"]
     asteroid = loader.MODELS["rock"]
-    asteroid.translate(renderer.vec3.Vec3(-10,0,0))
+    loader.SOUNDS["police-siren.mp3"].fadeout(5000)
+    asteroid.translate(renderer.vec3.Vec3(-10, 0, 0))
     assert (
         enemy_ship in engine.scene_3d.objects
     ), "main_game segment run before main_game_intro"
@@ -171,9 +171,9 @@ def _segment_main_game(engine):
             helpers.translate_object(
                 ship,
                 renderer.vec3.Vec3(
-                    random.randrange(-10,11) / 10,
-                    random.randrange(-10,11) / 10,
-                    random.randrange(-10,11) / 10,
+                    random.randrange(-10, 11) / 10,
+                    random.randrange(-10, 11) / 10,
+                    random.randrange(-10, 11) / 10,
                 ),
                 clamp_top=-2,
                 clamp_bottom=8,
@@ -184,24 +184,40 @@ def _segment_main_game(engine):
         )
         print(ship.translation)
         engine.after(300, lambda engine: _ship_loop_move(ship))
+
     def _asteroids_loop():
-        a=asteroid.clone()
+        a = asteroid.clone()
         a.translate(
-renderer.vec3.Vec3(
-                    random.randrange(-10,11) / 10,
-                    random.randrange(-10,11) / 10,
-                    random.randrange(-10,11) / 10,
-                ))
+            renderer.vec3.Vec3(
+                random.randrange(-10, 11) / 10,
+                random.randrange(-10, 11) / 10,
+                random.randrange(-10, 11) / 10,
+            )
+        )
         if random.randrange(2):
-            a.translate(renderer.vec3.Vec3(20,0,0))
-        engine.until(5000,helpers.translate_object(a, renderer.vec3.Vec3(0,0,random.randrange(18,36))))
-        engine.until(5000,helpers.rotate_object(a, renderer.vec3.Vec3(random.randrange(360), random.randrange(360), random.randrange(360))))
-        engine.after(5000,lambda engine: engine.scene_3d.objects.remove(a))
+            a.translate(renderer.vec3.Vec3(20, 0, 0))
+        engine.until(
+            5000,
+            helpers.translate_object(
+                a, renderer.vec3.Vec3(0, 0, random.randrange(18, 36))
+            ),
+        )
+        engine.until(
+            5000,
+            helpers.rotate_object(
+                a,
+                renderer.vec3.Vec3(
+                    random.randrange(360), random.randrange(360), random.randrange(360)
+                ),
+            ),
+        )
+        engine.after(5000, lambda engine: engine.scene_3d.objects.remove(a))
         engine.after(5000, lambda engine: a.cleanup())
         engine.scene_3d.add_obj(a)
         engine.update()
 
-        engine.after(random.randrange(1500,2000), lambda engine: _asteroids_loop())
+        engine.after(random.randrange(1500, 2000), lambda engine: _asteroids_loop())
+
     _asteroids_loop()
     _ship_loop_move(enemy_ship)
 

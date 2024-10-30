@@ -1,8 +1,7 @@
 from . import image, vec3, cCore
-import random
-import tqdm
 import math
 import asyncio
+
 LIGHT_DIR = vec3.Vec3(0, 0, -1)
 CAM_Z = 3
 NEAR_PLANE = -2.9
@@ -28,7 +27,8 @@ class ObjFile:
         self.rotation = vec3.Vec3(0, 0, 0)
         self.translation = vec3.Vec3(0, 0, 0)
         self._cached_img = None
-        self.cam_z = CAM_Z
+        self.defaults = {}
+        self._projection, self._viewport, self._projection_x_viewport = (None, None, None)
         self._imw, self._imh = (None, None)
         for slot, file in textures.items():
             self.add_texture(slot, file)
@@ -47,7 +47,8 @@ class ObjFile:
             offset=offset,
         )
         self._imw, self._imh = imw, imh
-
+        self._projection = vec3.Matrix.projection(self.defaults.get("cam_z", CAM_Z))
+        self._viewport = vec3.Matrix.viewport(imw / 8, imh / 8, imw * 3 / 4, imh * 3 / 4)
     def clone(self, copy_transforms=False):
         new_objfile = ObjFile(
             self.vertices,
@@ -62,15 +63,18 @@ class ObjFile:
             new_objfile.translate(self.translation)
             new_objfile.rotate(self.rotation)
         return new_objfile
+
     def cleanup(self):
         del self.textures
         del self.vertices
         del self.vertex_normals
+
     def add_texture(self, texture_type, texture_file):
         if isinstance(texture_file, str):
             self.textures[texture_type] = cCore.Texture.from_ppm(texture_file)
         else:
             self.textures[texture_type] = texture_file
+
     def calculate_centerpoint(self):
 
         vertex_sum = sum(self.vertices, vec3.Vec3(0, 0, 0))
@@ -81,7 +85,8 @@ class ObjFile:
         *self.vertices, self.centerpoint = [
             vert + delta for vert in (*self.vertices, self.centerpoint)
         ]
-
+    def set_defaults(self, **dfs):
+        self.defaults.update(dfs)
     def rotate(self, thetas, degrees=True):
         if degrees:
             thetas = vec3.array(math.radians(theta) for theta in thetas)
@@ -122,7 +127,6 @@ class ObjFile:
         self.translate(-self.translation)
         self.light_dir = LIGHT_DIR
 
-
     def render(
         self,
         imw=None,
@@ -133,10 +137,12 @@ class ObjFile:
         chunk_size=1,
         zbuffer=None,
         backface_culling=True,
+        cam_z=None,
         **kwargs,
     ):
         if zbuffer is None:
             zbuffer = {}
+        cam_z = cam_z or self.defaults.get("cam_z", CAM_Z)
         normal_img = self.textures.get("normal")
         specular_img = self.textures.get("specular")
         if normal_img:
@@ -159,14 +165,14 @@ class ObjFile:
             chunk_size=chunk_size,
         )
         imw, imh = img.width, img.height
-        projection = vec3.Matrix.projection(CAM_Z)
-        viewport = vec3.Matrix.viewport(imw / 8, imh / 8, imw * 3 / 4, imh * 3 / 4)
-
+        projection = (self._projection if cam_z==self.defaults.get("cam_z",CAM_Z) else None)or vec3.Matrix.projection(cam_z)
+        viewport = self._viewport or vec3.Matrix.viewport(imw / 8, imh / 8, imw * 3 / 4, imh * 3 / 4)
+        projection_x_viewport = self._projection_x_viewport or (viewport @ projection)
         def render_face(face):
             world_coords = tuple(self.vertices[f[0] - 1] for f in face)
             if any(coor.z < NEAR_PLANE for coor in world_coords):
                 return
-            screen_coords = tuple(viewport @ projection @ wc for wc in world_coords)
+            screen_coords = tuple(projection_x_viewport @ wc for wc in world_coords)
             n = (
                 (world_coords[2] - world_coords[0])
                 .cross(world_coords[1] - world_coords[0])

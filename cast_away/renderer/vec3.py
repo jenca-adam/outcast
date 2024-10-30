@@ -1,4 +1,4 @@
-from .cCore import Matrix, Vec3
+from .cCore import Vec3, Matrix
 
 """import math
 DEPTH = 255

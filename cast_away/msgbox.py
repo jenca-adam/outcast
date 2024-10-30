@@ -4,7 +4,7 @@ import os
 from . import loader
 
 
-def show_error(errtext="An error has occurred",errtitle="ERROR", size=(600, 400)):
+def show_error(errtext="An error has occurred", errtitle="ERROR", size=(600, 400)):
     # CREATE A NEW SCREEN UI MANAGER IN CASE THE DEFAULT ONE CRASHED
     ww, wh = size
     screen = pygame.display.set_mode((ww, wh), pygame.NOFRAME)

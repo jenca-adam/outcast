@@ -1,12 +1,10 @@
 import pygame
 import time
-import random
-import os
-import traceback
 import pygame_gui
-import threading
 from . import loader
 from .fonts import HELVETICA_XSMALL
+
+
 class AfterSequence:
     def __init__(self, engine, time):
         self.engine = engine
@@ -99,12 +97,12 @@ class Engine:
 
     def loop(self):
         try:
-            #previous_frame_start=pygame.time.get_ticks()
+            # previous_frame_start=pygame.time.get_ticks()
             while not self._exit_flag:
-                #current_frame_start = pygame.time.get_ticks()
-                self.delta = self.clock.tick(self.fps)/1000
-                #self.delta = (current_frame_start - previous_frame_start)/1000
-                #previous_frame_start = current_frame_start
+                # current_frame_start = pygame.time.get_ticks()
+                self.delta = self.clock.tick(self.fps) / 1000
+                # self.delta = (current_frame_start - previous_frame_start)/1000
+                # previous_frame_start = current_frame_start
                 self.uimgr.update(self.delta)
                 self.screen.fill((0, 0, 0))
                 self._handle_events()
@@ -121,10 +119,14 @@ class Engine:
                 self.uimgr.draw_ui(self.screen)
                 self._handle_topcalls()
                 if self.delta:
-                    self.screen.blit(HELVETICA_XSMALL.render(f"{1/self.delta:.2f} FPS", True, (255,255,255)))
-                #delay = 1/self.fps - (pygame.time.get_ticks()-current_frame_start)
+                    self.screen.blit(
+                        HELVETICA_XSMALL.render(
+                            f"{1/self.delta:.2f} FPS", True, (255, 255, 255)
+                        )
+                    )
+                # delay = 1/self.fps - (pygame.time.get_ticks()-current_frame_start)
                 pygame.display.flip()
-                #pygame.time.delay(int(delay//1000))
+                # pygame.time.delay(int(delay//1000))
         finally:
             pygame.display.quit()
 

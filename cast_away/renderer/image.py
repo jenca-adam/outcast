@@ -1,9 +1,7 @@
 from .ppm import export_image, read_image
 from . import cCore
 import enum
-import functools
 import pygame
-import tqdm
 
 
 class ImageBackend(enum.Enum):

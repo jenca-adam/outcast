@@ -1,5 +1,6 @@
 from . import cCore
 
+
 class Scene:
     def __init__(self):
         self.objects = []
@@ -8,6 +9,7 @@ class Scene:
         self._rimg = None
         self.screen = None
         self.default_kwargs = {}
+        self.defaults={}
     def render(
         self,
         imw=None,
@@ -33,13 +35,15 @@ class Scene:
                 **self.default_kwargs,
             )
 
-    def set_kwarg(self, kwname, kwval):
-        self.default_kwargs[kwname] = kwval
-
+    def set_kwargs(self, **kwargs):
+        self.default_kwargs.update(kwargs)
+    def set_defaults(self, **dfs):
+        self.defaults.update(dfs)
     def add_obj(self, ob):
         if self._rimg:
             imw, imh, kwargs = self._rimg
             ob.set_render_image(imw, imh, **kwargs)
+        ob.set_defaults(**self.defaults)
         self.objects.append(ob)
 
     def call_all(self, function_name, *args, **kwargs):

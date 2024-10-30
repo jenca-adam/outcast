@@ -1,7 +1,6 @@
 import os
 from .renderer import ObjFile, Vec3
 import logging
-import tqdm
 from .pygutils import ProgressBar
 import pygame.mixer
 import pygame.freetype

@@ -74,3 +74,6 @@ def fadein_text(text, font, time, color, cp):
         rep += engine.delta
 
     return fit_inner
+
+def get_click_normal(click_pos, cam_z):
+    pass
