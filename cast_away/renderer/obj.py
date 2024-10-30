@@ -3,7 +3,6 @@ import random
 import tqdm
 import math
 import asyncio
-
 LIGHT_DIR = vec3.Vec3(0, 0, -1)
 CAM_Z = 3
 NEAR_PLANE = -2.9
@@ -49,9 +48,29 @@ class ObjFile:
         )
         self._imw, self._imh = imw, imh
 
+    def clone(self, copy_transforms=False):
+        new_objfile = ObjFile(
+            self.vertices,
+            self.texture_vertices,
+            self.vertex_normals,
+            self.faces,
+            self.textures,
+        )
+        new_objfile._cached_img = self._cached_img
+        new_objfile._imw, new_objfile._imh = (self._imw, self._imh)
+        if copy_transforms:
+            new_objfile.translate(self.translation)
+            new_objfile.rotate(self.rotation)
+        return new_objfile
+    def cleanup(self):
+        del self.textures
+        del self.vertices
+        del self.vertex_normals
     def add_texture(self, texture_type, texture_file):
-        self.textures[texture_type] = cCore.Texture.from_ppm(texture_file)
-
+        if isinstance(texture_file, str):
+            self.textures[texture_type] = cCore.Texture.from_ppm(texture_file)
+        else:
+            self.textures[texture_type] = texture_file
     def calculate_centerpoint(self):
 
         vertex_sum = sum(self.vertices, vec3.Vec3(0, 0, 0))
@@ -203,7 +222,6 @@ class ObjFile:
                 vertex_normals=tuple(self.vertex_normals[f[2] - 1] for f in face),
             )
         img.save(outfile)
-
     def render(
         self,
         imw=None,
@@ -213,6 +231,7 @@ class ObjFile:
         lighting="phong",
         chunk_size=1,
         zbuffer=None,
+        backface_culling=True,
         **kwargs,
     ):
         if zbuffer is None:
@@ -252,7 +271,7 @@ class ObjFile:
                 .cross(world_coords[1] - world_coords[0])
                 .normalized()
             )
-            if n.dot(LIGHT_DIR) <= 0:
+            if n.dot(LIGHT_DIR) <= 0 and backface_culling:
                 return
             img.draw_triangle(
                 *screen_coords,

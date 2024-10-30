@@ -1,0 +1,25 @@
+{
+   "defaults":{
+  	"font": {
+	       "size":56
+	}
+   },	
+   "button" : {
+      "colours" : {
+         "active_bg" : "#aa6666",
+         "active_border" : "#eebbbb",
+         "active_text" : "#eebbbb",
+         "hovered_bg" : "#886666",
+         "hovered_border" : "#ddbbbb",
+         "hovered_text" : "#ddbbbb",
+         "normal_bg" : "#664444",
+         "normal_border" : "#bb9999",
+         "normal_text" : "#bb9999"
+      },
+      "font" : {
+         "size" : 12
+      }
+   }
+}
+
+

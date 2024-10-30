@@ -2,4 +2,4 @@ import pygame
 
 pygame.font.init()
 
-HELVETICA_BIG = pygame.font.SysFont("Helvetica", 32)
+HELVETICA_XSMALL = pygame.font.SysFont("Helvetica", 20)

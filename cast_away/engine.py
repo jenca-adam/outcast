@@ -4,9 +4,9 @@ import random
 import os
 import traceback
 import pygame_gui
+import threading
 from . import loader
-
-
+from .fonts import HELVETICA_XSMALL
 class AfterSequence:
     def __init__(self, engine, time):
         self.engine = engine
@@ -20,8 +20,10 @@ class AfterSequence:
 
 
 class Engine:
-    def __init__(self, scene_3d, fps=30):
+    def __init__(self, scene_3d, screen, scene_offset, fps=60):
         self.scene_3d = scene_3d
+        self.scene_offset = scene_offset
+        self.screen = screen
         self._event_handlers = {}
         self._key_handlers = {}
         self._afters = []
@@ -29,22 +31,33 @@ class Engine:
         self._topcalls = set()
         self._uihandlers = {}
         self.fps = fps
+        self._background = None
         self._exit_flag = False
         self._update_flag = False
         self.delta = 0
-        self.data ={}
+        self.data = {}
         self.total_time_offset = 0
         self.clock = pygame.time.Clock()
         self.uimgr = pygame_gui.UIManager(
-            self.scene_3d.screen.get_size(), theme_path=loader.FILES / "theme/theme.json"
+            self.screen.get_size(),
+            theme_path=loader.FILES / "theme/theme.json",
         )
+
     def wait(self, ms):
         self.total_time_offset += ms
 
+    def set_background(self, surf):
+        self._background = surf
+
+    def reset_background(self):
+        self._background = (0, 0, 0)
+
     def quit(self):
         self._exit_flag = True
+
     def update(self):
-        self._update_flag=True
+        self._update_flag = True
+
     def _handle_events(self):
         for key in self._key_handlers:
             if pygame.key.get_pressed()[key]:
@@ -55,14 +68,17 @@ class Engine:
                 self._event_handlers[event.type](event)
             if event.type == pygame.QUIT:
                 self.quit()
-            if pygame.USEREVENT<=event.type <= pygame.NUMEVENTS:
+            if pygame.USEREVENT <= event.type <= pygame.NUMEVENTS:
                 for uih in list(self._uihandlers.values()):
                     uih(event)
             self.uimgr.process_events(event)
-    def add_ui_event_handler(self,handler, handler_id):
-        self._uihandlers[handler_id]=handler
+
+    def add_ui_event_handler(self, handler, handler_id):
+        self._uihandlers[handler_id] = handler
+
     def remove_ui_event_handler(self, handler_id):
         del self._uihandlers[handler_id]
+
     def _handle_afters(self):
         for i, (timeout, timer) in enumerate(self._afters):
             if time.perf_counter() >= timeout:
@@ -83,24 +99,34 @@ class Engine:
 
     def loop(self):
         try:
+            #previous_frame_start=pygame.time.get_ticks()
             while not self._exit_flag:
-                self.delta = self.clock.tick(self.fps) / 1000
+                #current_frame_start = pygame.time.get_ticks()
+                self.delta = self.clock.tick(self.fps)/1000
+                #self.delta = (current_frame_start - previous_frame_start)/1000
+                #previous_frame_start = current_frame_start
                 self.uimgr.update(self.delta)
-                self.scene_3d.screen.fill((0, 0, 0))
+                self.screen.fill((0, 0, 0))
                 self._handle_events()
                 self._handle_afters()
                 self._handle_untils()
                 if self._update_flag:
-                    print("UPDATE")
+                    if self._background:
+                        self.scene_3d.screen.blit(self._background, (0, 0))
+                    else:
+                        self.scene_3d.screen.fill((0, 0, 0))
                     self.scene_3d.render()
-                self._update_flag=False
-                self.uimgr.draw_ui(self.scene_3d.screen)
+                    self._update_flag = False
+                self.screen.blit(self.scene_3d.screen, self.scene_offset)
+                self.uimgr.draw_ui(self.screen)
                 self._handle_topcalls()
+                if self.delta:
+                    self.screen.blit(HELVETICA_XSMALL.render(f"{1/self.delta:.2f} FPS", True, (255,255,255)))
+                #delay = 1/self.fps - (pygame.time.get_ticks()-current_frame_start)
                 pygame.display.flip()
+                #pygame.time.delay(int(delay//1000))
         finally:
-            print(traceback.format_exc())
             pygame.display.quit()
-            os._exit(0)
 
     def after(self, t, func, seq=True, delay=0, use_offset=True):
         self._afters.append(
@@ -111,6 +137,9 @@ class Engine:
             )
         )
         return AfterSequence(self, t * seq + delay)
+
+    def reset_wait_time(self):
+        self.total_time_offset = 0
 
     def until(self, t, func, seq=True, delay=0, use_offset=True):
         if delay or (self.total_time_offset and use_offset):
@@ -128,5 +157,6 @@ class Engine:
 
     def __getitem__(self, it):
         return self.data[it]
+
     def __setitem__(self, it, val):
-        self.data[it]=val
+        self.data[it] = val

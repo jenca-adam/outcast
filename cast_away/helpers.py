@@ -1,3 +1,6 @@
+from .renderer import Vec3
+
+
 def get_center(sc):
     sz = sc.get_size()
     return (sz[0] // 2, sz[1] // 2)
@@ -7,12 +10,34 @@ def rotate_object(obj, speed):
     def ro_inner(engine):
         obj.rotate(speed * engine.delta)
         engine.update()
+
     return ro_inner
 
 
-def translate_object(obj, speed):
+def translate_object(
+    obj,
+    speed,
+    clamp_top=None,
+    clamp_bottom=None,
+    clamp_left=None,
+    clamp_right=None,
+    clamp_front=None,
+    clamp_back=None,
+):
     def to_inner(engine):
         obj.translate(speed * engine.delta)
+        if clamp_top is not None and obj.translation.y < clamp_top:
+            obj.translate(Vec3(clamp_top - obj.translation.y))
+        elif clamp_bottom is not None and obj.translation.y > clamp_bottom:
+            obj.translate(Vec3(clamp_bottom - obj.translation.y))
+        if clamp_left is not None and obj.translation.x < clamp_left:
+            obj.translate(Vec3(clamp_left - obj.translation.x))
+        elif clamp_right is not None and obj.translation.x > clamp_right:
+            obj.translate(Vec3(clamp_right - obj.translation.x))
+        if clamp_front is not None and obj.translation.z < clamp_front:
+            obj.translate(Vec3(clamp_front - obj.translation.z))
+        elif clamp_back is not None and obj.translation.z > clamp_back:
+            obj.translate(Vec3(clamp_back - obj.translation.z))
         engine.update()
 
     return to_inner
@@ -39,7 +64,7 @@ def fadein_text(text, font, time, color, cp):
         nonlocal rep  # wtf i've never heard of this
         render_to_center(
             font,
-            engine.scene_3d.screen,
+            engine.screen,
             cp,
             text,
             color + (min(255, rep * 255 / time),),

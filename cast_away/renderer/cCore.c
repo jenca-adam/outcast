@@ -34,7 +34,9 @@
 #define CCORE_PHONG_1_(c)                                                      \
   cCore_calcphong_1_(ambient_coeff, diffuse_coeff, specular_coeff, diff, spec, \
                      c);
-
+#ifdef Py_LIMITED_API
+#error "can't compile with limited api"
+#endif
 #define EPSILON 0.00000001
 #define VIEWPORT_DEPTH 255
 /* FORWARD */
@@ -1122,7 +1124,7 @@ static PyObject *cCore_zero(PyObject *self, PyObject *args) {
 static Vec3Object *cCore_getuv_(TextureObject *texture, Vec3Object *uv) {
   long u = (fabs(uv->x * (texture->width - 1)));
   long v = (fabs(texture->height - uv->y * (texture->height - 1)));
-  return texture->m[v%texture->height][u%texture->width];
+  return texture->m[v % texture->height][u % texture->width];
 }
 static void cCore_set_pixel_(PyObject *img, double x, double y,
                              Vec3Object *color) {
@@ -1357,6 +1359,8 @@ static PyObject *cCore_draw_triangle(PyObject *self, PyObject *args,
           (Vec3Object *)rotation, tangent_space, mindepth)) {
     return NULL;
   }
+  free(texture_coords_tri);
+  free(vertex_normals_tri);
   return Py_None; // TODO
 }
 static PyObject *cCore_compute_tangent_space_basis(PyObject *self,

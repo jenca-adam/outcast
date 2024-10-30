@@ -1,6 +1,5 @@
 from . import cCore
 
-
 class Scene:
     def __init__(self):
         self.objects = []
@@ -8,7 +7,7 @@ class Scene:
         self.imw = 0
         self._rimg = None
         self.screen = None
-
+        self.default_kwargs = {}
     def render(
         self,
         imw=None,
@@ -23,8 +22,19 @@ class Scene:
         zbuffer = cCore.Matrix.empty((imw or self.imw) + 1, (imh or self.imh) + 1)
         for obj in self.objects:
             obj.render(
-                imw, imh, outfile, screen, lighting, chunk_size, zbuffer, **kwargs
+                imw,
+                imh,
+                outfile,
+                screen,
+                lighting,
+                chunk_size,
+                zbuffer,
+                **kwargs,
+                **self.default_kwargs,
             )
+
+    def set_kwarg(self, kwname, kwval):
+        self.default_kwargs[kwname] = kwval
 
     def add_obj(self, ob):
         if self._rimg:

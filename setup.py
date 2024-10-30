@@ -1,15 +1,16 @@
-from setuptools import setup, Extension
-
-module = Extension(
-    "spongia.renderer.cCore",
-    sources=["spongia/renderer/cCore.c"],
-    extra_compile_args=["-O0"],
-
-)
+from setuptools import setup, Extension, find_packages
 
 setup(
-    name="spngia.renderer.cCore",
+    name="cast_away",
     version="0.0",
-    ext_modules=[module],
-    install_requires=["pygame","pygame-gui", "coloredlogs"],
+    description="game",
+    packages=find_packages(include=["cast_away", "cast_away.renderer"]),
+    install_requires=["pygame-ce", "pygame-gui", "coloredlogs"],
+    ext_modules=[
+        Extension(
+            "cast_away.renderer.cCore",
+            sources=["cast_away/renderer/cCore.c"],
+            extra_compile_args=["-O0"],
+        )
+    ],
 )

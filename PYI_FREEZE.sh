@@ -1,0 +1,1 @@
+yes|pyinstaller run.spec

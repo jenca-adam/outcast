@@ -1,0 +1,39 @@
+{
+   "#select_label" : {
+      "font" : {
+         "name" : "PublicPixel",
+         "regular_resource" : {
+            "package" : "files.fonts",
+            "resource" : "PublicPixel.ttf"
+         },
+         "size" : 36
+      }
+   },
+   "@pixelated" : {
+      "font" : {
+         "name" : "PublicPixel",
+         "regular_resource" : {
+            "package" : "files.fonts",
+            "resource" : "PublicPixel.ttf"
+         }
+      }
+   },
+   "button" : {
+      "colours" : {
+         "active_bg" : "#aaaa66",
+         "active_border" : "#eeeebb",
+         "active_text" : "#eeeebb",
+         "hovered_bg" : "#888866",
+         "hovered_border" : "#ddddbb",
+         "hovered_text" : "#ddddbb",
+         "normal_bg" : "#666644",
+         "normal_border" : "#bbbb99",
+         "normal_text" : "#bbbb99"
+      },
+      "font" : {
+         "size" : 26
+      }
+   }
+}
+
+
