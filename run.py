@@ -1,4 +1,4 @@
 #!/usr/bin/env python3
-import cast_away.__main__
+import outcast.__main__
 
-cast_away.__main__.main()
+outcast.__main__.main()

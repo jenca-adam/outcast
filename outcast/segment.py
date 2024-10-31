@@ -43,7 +43,7 @@ def _segment_intro(engine):
     engine.until(
         4000,
         helpers.fadein_text(
-            "CAST AWAY",
+            "THE OUTCAST",
             titlefont,
             2.5,
             (0, 128, 128),

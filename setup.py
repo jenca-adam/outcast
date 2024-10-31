@@ -1,15 +1,15 @@
 from setuptools import setup, Extension, find_packages
 
 setup(
-    name="cast_away",
+    name="outcast",
     version="0.0",
     description="game",
-    packages=find_packages(include=["cast_away", "cast_away.renderer"]),
+    packages=find_packages(include=["outcast", "outcast.renderer"]),
     install_requires=["pygame-ce", "pygame-gui", "coloredlogs"],
     ext_modules=[
         Extension(
-            "cast_away.renderer.cCore",
-            sources=["cast_away/renderer/cCore.c"],
+            "outcast.renderer.cCore",
+            sources=["outcast/renderer/cCore.c"],
             extra_compile_args=["-O0"],
         )
     ],
