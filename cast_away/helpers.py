@@ -1,4 +1,4 @@
-from .renderer import Vec3
+from .renderer import Vec3, Matrix
 
 
 def get_center(sc):
@@ -75,5 +75,10 @@ def fadein_text(text, font, time, color, cp):
 
     return fit_inner
 
-def get_click_normal(click_pos, cam_z):
-    pass
+
+def to_world_space(click_pos, matrix):
+    im = matrix.inverse4x4()
+    v3 = Vec3(*click_pos, 0)
+    o=Vec3.from_matrix3(im @ Matrix.from_vector(v3))
+    o.z=-o.z
+    return o

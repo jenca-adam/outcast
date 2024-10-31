@@ -6,7 +6,7 @@ from .settings import *
 from . import renderer
 from . import loader
 from . import helpers
-
+from . import sprites
 SEGMENTS = {}
 
 
@@ -135,7 +135,7 @@ def _segment_main_game_intro(engine):
     engine.until(
         4000,
         helpers.fadein_text(
-            "RUN!", runfont, 0.1, (255, 0, 0), helpers.get_center(engine.screen)
+            "SURVIVE!", runfont, 0.1, (255, 255, 0), helpers.get_center(engine.screen)
         ),
     )
     engine.until(1000, helpers.rotate_object(enemy_ship, renderer.vec3.Vec3(15, 0, 0)))
@@ -163,6 +163,16 @@ def _segment_main_game(engine):
     assert (
         enemy_ship in engine.scene_3d.objects
     ), "main_game segment run before main_game_intro"
+    #engine.scene_3d.objects.remove(enemy_ship)
+    crosshair = sprites.Crosshair(engine.screen, engine.scene_clamp)
+    engine.sprite_group.add(crosshair)
+    def _click_handler(event):
+        screen_pos = (
+            (event.pos[0] - engine.scene_offset[0]) / PIXEL_SIZE,
+            (event.pos[1] - engine.scene_offset[1]) / PIXEL_SIZE,
+        )
+        position = helpers.to_world_space(screen_pos, enemy_ship._projection_x_viewport)
+        print("POSITION", position, "E", screen_pos)
 
     def _ship_loop_move(ship):
         print("MOVE")
@@ -182,7 +192,7 @@ def _segment_main_game(engine):
                 clamp_front=-10,
             ),
         )
-        print(ship.translation)
+        print(ship.calculate_centerpoint())
         engine.after(300, lambda engine: _ship_loop_move(ship))
 
     def _asteroids_loop():
@@ -216,11 +226,12 @@ def _segment_main_game(engine):
         engine.scene_3d.add_obj(a)
         engine.update()
 
-        engine.after(random.randrange(1500, 2000), lambda engine: _asteroids_loop())
+        engine.after(random.randrange(500, 2000), lambda engine: _asteroids_loop())
 
     _asteroids_loop()
     _ship_loop_move(enemy_ship)
-
+    engine.add_event_handler(pygame.MOUSEBUTTONDOWN, _click_handler)
+    engine.add_event_handler(pygame.MOUSEMOTION, crosshair.mousemotion_handler)
 
 def play_segment(segment_name, engine):
     SEGMENTS[segment_name](engine)

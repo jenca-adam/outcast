@@ -9,6 +9,8 @@ except:
     pass
 from .msgbox import show_error
 from .settings import *
+
+
 def main():
     try:
         from . import loader
@@ -28,13 +30,14 @@ def main():
         scene, image_offset = setup_scene(screen, PIXEL_SIZE)
         # run_intro(screen)
         cast_away = engine.Engine(scene, screen, image_offset, TARGET_FPS)
-        # segment.play_segment("intro", cast_away)
-
-        segment.play_segment("main_game_intro", cast_away)
+        segment.play_segment(INITIAL_SEGMENT_NAME, cast_away)
+        #segment.play_segment("main_game_intro", cast_away)
         cast_away.loop()
     except:
         pygame.mixer.quit()
         pygame.display.quit()
         show_error(traceback.format_exc())
-if __name__=="__main__":
+
+
+if __name__ == "__main__":
     main()

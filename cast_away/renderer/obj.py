@@ -28,7 +28,13 @@ class ObjFile:
         self.translation = vec3.Vec3(0, 0, 0)
         self._cached_img = None
         self.defaults = {}
-        self._projection, self._viewport, self._projection_x_viewport = (None, None, None)
+        (
+            self._projection,
+            self._viewport,
+            self._projection_x_viewport,
+            self._i_viewport,
+            self._i_projection,
+        ) = (None, None, None, None, None)
         self._imw, self._imh = (None, None)
         for slot, file in textures.items():
             self.add_texture(slot, file)
@@ -48,7 +54,18 @@ class ObjFile:
         )
         self._imw, self._imh = imw, imh
         self._projection = vec3.Matrix.projection(self.defaults.get("cam_z", CAM_Z))
-        self._viewport = vec3.Matrix.viewport(imw / 8, imh / 8, imw * 3 / 4, imh * 3 / 4)
+        self._viewport = vec3.Matrix.viewport(
+            imw / 8, imh / 8, imw * 3 / 4, imh * 3 / 4
+        )
+        self._i_projection = vec3.Matrix.inverse_projection(
+            self.defaults.get("cam_z", CAM_Z)
+        )
+        self._i_viewport = vec3.Matrix.inverse_viewport(
+            imw / 8, imh / 8, imw * 3 / 4, imh * 3 / 4
+        )
+        print(self._viewport, f"{imw/8},{imh/8},{imw*3/4},{imh*3/4}")
+        self._projection_x_viewport = self._viewport @ self._projection
+
     def clone(self, copy_transforms=False):
         new_objfile = ObjFile(
             self.vertices,
@@ -85,8 +102,10 @@ class ObjFile:
         *self.vertices, self.centerpoint = [
             vert + delta for vert in (*self.vertices, self.centerpoint)
         ]
+
     def set_defaults(self, **dfs):
         self.defaults.update(dfs)
+
     def rotate(self, thetas, degrees=True):
         if degrees:
             thetas = vec3.array(math.radians(theta) for theta in thetas)
@@ -165,9 +184,14 @@ class ObjFile:
             chunk_size=chunk_size,
         )
         imw, imh = img.width, img.height
-        projection = (self._projection if cam_z==self.defaults.get("cam_z",CAM_Z) else None)or vec3.Matrix.projection(cam_z)
-        viewport = self._viewport or vec3.Matrix.viewport(imw / 8, imh / 8, imw * 3 / 4, imh * 3 / 4)
+        projection = (
+            self._projection if cam_z == self.defaults.get("cam_z", CAM_Z) else None
+        ) or vec3.Matrix.projection(cam_z)
+        viewport = self._viewport or vec3.Matrix.viewport(
+            imw / 8, imh / 8, imw * 3 / 4, imh * 3 / 4
+        )
         projection_x_viewport = self._projection_x_viewport or (viewport @ projection)
+
         def render_face(face):
             world_coords = tuple(self.vertices[f[0] - 1] for f in face)
             if any(coor.z < NEAR_PLANE for coor in world_coords):

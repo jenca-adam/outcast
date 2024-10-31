@@ -24,7 +24,8 @@ def load_obj(obj_name):
     objfile = objdir / f"{obj_name}.obj"
     if not os.path.exists(objfile):
         raise FileNotFoundError(f"model not found: {obj_name}")
-    obj = ObjFile.open(objfile)
+    scale = obj_info.get(obj_name, {}).get("scale",1)
+    obj = ObjFile.open(objfile, scale=scale)
     for texture in ("diffuse", "nm_tangent", "spec"):
         texture_fn = objdir / f"{obj_name}_{texture}.ppm"
         if not os.path.exists(texture_fn):

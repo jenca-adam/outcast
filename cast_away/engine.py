@@ -22,6 +22,7 @@ class Engine:
         self.scene_3d = scene_3d
         self.scene_offset = scene_offset
         self.screen = screen
+        self.scene_clamp = pygame.rect.Rect(*scene_offset, *scene_3d.screen.size)
         self._event_handlers = {}
         self._key_handlers = {}
         self._afters = []
@@ -40,7 +41,7 @@ class Engine:
             self.screen.get_size(),
             theme_path=loader.FILES / "theme/theme.json",
         )
-
+        self.sprite_group = pygame.sprite.Group()
     def wait(self, ms):
         self.total_time_offset += ms
 
@@ -56,12 +57,14 @@ class Engine:
     def update(self):
         self._update_flag = True
 
+    def add_event_handler(self, event, handler):
+        self._event_handlers[event] = handler
+
     def _handle_events(self):
         for key in self._key_handlers:
             if pygame.key.get_pressed()[key]:
                 self._key_handlers[key]()
         for event in pygame.event.get():
-            print(event)
             if event.type in self._event_handlers:
                 self._event_handlers[event.type](event)
             if event.type == pygame.QUIT:
@@ -116,6 +119,7 @@ class Engine:
                     self.scene_3d.render()
                     self._update_flag = False
                 self.screen.blit(self.scene_3d.screen, self.scene_offset)
+                self.sprite_group.draw(self.screen)
                 self.uimgr.draw_ui(self.screen)
                 self._handle_topcalls()
                 if self.delta:
@@ -126,6 +130,7 @@ class Engine:
                     )
                 # delay = 1/self.fps - (pygame.time.get_ticks()-current_frame_start)
                 pygame.display.flip()
+
                 # pygame.time.delay(int(delay//1000))
         finally:
             pygame.display.quit()

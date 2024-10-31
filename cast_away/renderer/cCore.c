@@ -759,6 +759,161 @@ static PyObject *Matrix_inverse(PyObject *self, PyObject *_) {
   MatrixObject *self_ = (MatrixObject *)self;
   return (PyObject *)Matrix_inverse_obj(self_);
 }
+double _Matrix_determinant4x4_asdouble(PyObject *self) {
+  MatrixObject *self_ = (MatrixObject *)self;
+  double **m = self_->m;
+
+  double det = m[0][0] * (m[1][1] * (m[2][2] * m[3][3] - m[2][3] * m[3][2]) -
+                          m[1][2] * (m[2][1] * m[3][3] - m[2][3] * m[3][1]) +
+                          m[1][3] * (m[2][1] * m[3][2] - m[2][2] * m[3][1])) -
+               m[0][1] * (m[1][0] * (m[2][2] * m[3][3] - m[2][3] * m[3][2]) -
+                          m[1][2] * (m[2][0] * m[3][3] - m[2][3] * m[3][0]) +
+                          m[1][3] * (m[2][0] * m[3][2] - m[2][2] * m[3][0])) +
+               m[0][2] * (m[1][0] * (m[2][1] * m[3][3] - m[2][3] * m[3][1]) -
+                          m[1][1] * (m[2][0] * m[3][3] - m[2][3] * m[3][0]) +
+                          m[1][3] * (m[2][0] * m[3][1] - m[2][1] * m[3][0])) -
+               m[0][3] * (m[1][0] * (m[2][1] * m[3][2] - m[2][2] * m[3][1]) -
+                          m[1][1] * (m[2][0] * m[3][2] - m[2][2] * m[3][0]) +
+                          m[1][2] * (m[2][0] * m[3][1] - m[2][1] * m[3][0]));
+
+  return det;
+}
+static PyObject *Matrix_determinant4x4(PyObject *self, PyObject *_) {
+  MatrixObject *self_ = (MatrixObject *)self;
+  CCORE_MATRIX_ASSERT_SQUARE(self_, 4);
+  return PyFloat_FromDouble(_Matrix_determinant4x4_asdouble(self));
+}
+static MatrixObject *Matrix_inverse4x4_obj(MatrixObject *self_) {
+  CCORE_MATRIX_ASSERT_SQUARE(self_, 4);
+
+  double det = _Matrix_determinant4x4_asdouble((PyObject *)self_);
+  if (det == 0) {
+    PyErr_SetString(PyExc_ValueError,
+                    "Non-invertible Matrix (determinant is 0)");
+    return NULL;
+  }
+
+  double inv_det = 1.0 / det;
+  double **inv = cCore_mk_empty_matrix(4, 4);
+  double **m = self_->m;
+
+  inv[0][0] = (m[1][1] * (m[2][2] * m[3][3] - m[2][3] * m[3][2]) -
+               m[1][2] * (m[2][1] * m[3][3] - m[2][3] * m[3][1]) +
+               m[1][3] * (m[2][1] * m[3][2] - m[2][2] * m[3][1])) *
+              inv_det;
+
+  inv[0][1] = -(m[0][1] * (m[2][2] * m[3][3] - m[2][3] * m[3][2]) -
+                m[0][2] * (m[2][1] * m[3][3] - m[2][3] * m[3][1]) +
+                m[0][3] * (m[2][1] * m[3][2] - m[2][2] * m[3][1])) *
+              inv_det;
+
+  inv[0][2] = (m[0][1] * (m[1][2] * m[3][3] - m[1][3] * m[3][2]) -
+               m[0][2] * (m[1][1] * m[3][3] - m[1][3] * m[3][1]) +
+               m[0][3] * (m[1][1] * m[3][2] - m[1][2] * m[3][1])) *
+              inv_det;
+
+  inv[0][3] = -(m[0][1] * (m[1][2] * m[2][3] - m[1][3] * m[2][2]) -
+                m[0][2] * (m[1][1] * m[2][3] - m[1][3] * m[2][1]) +
+                m[0][3] * (m[1][1] * m[2][2] - m[1][2] * m[2][1])) *
+              inv_det;
+
+  inv[1][0] = -(m[1][0] * (m[2][2] * m[3][3] - m[2][3] * m[3][2]) -
+                m[1][2] * (m[2][0] * m[3][3] - m[2][3] * m[3][0]) +
+                m[1][3] * (m[2][0] * m[3][2] - m[2][2] * m[3][0])) *
+              inv_det;
+
+  inv[1][1] = (m[0][0] * (m[2][2] * m[3][3] - m[2][3] * m[3][2]) -
+               m[0][2] * (m[2][0] * m[3][3] - m[2][3] * m[3][0]) +
+               m[0][3] * (m[2][0] * m[3][2] - m[2][2] * m[3][0])) *
+              inv_det;
+
+  inv[1][2] = -(m[0][0] * (m[1][2] * m[3][3] - m[1][3] * m[3][2]) -
+                m[0][2] * (m[1][0] * m[3][3] - m[1][3] * m[3][0]) +
+                m[0][3] * (m[1][0] * m[3][2] - m[1][2] * m[3][0])) *
+              inv_det;
+
+  inv[1][3] = (m[0][0] * (m[1][2] * m[2][3] - m[1][3] * m[2][2]) -
+               m[0][2] * (m[1][0] * m[2][3] - m[1][3] * m[2][0]) +
+               m[0][3] * (m[1][0] * m[2][2] - m[1][2] * m[2][0])) *
+              inv_det;
+
+  inv[2][0] = (m[1][0] * (m[2][1] * m[3][3] - m[2][3] * m[3][1]) -
+               m[1][1] * (m[2][0] * m[3][3] - m[2][3] * m[3][0]) +
+               m[1][3] * (m[2][0] * m[3][1] - m[2][1] * m[3][0])) *
+              inv_det;
+
+  inv[2][1] = -(m[0][0] * (m[2][1] * m[3][3] - m[2][3] * m[3][1]) -
+                m[0][1] * (m[2][0] * m[3][3] - m[2][3] * m[3][0]) +
+                m[0][3] * (m[2][0] * m[3][1] - m[2][1] * m[3][0])) *
+              inv_det;
+
+  inv[2][2] = (m[0][0] * (m[1][1] * m[3][3] - m[1][3] * m[3][1]) -
+               m[0][1] * (m[1][0] * m[3][3] - m[1][3] * m[3][0]) +
+               m[0][3] * (m[1][0] * m[3][1] - m[1][1] * m[3][0])) *
+              inv_det;
+
+  inv[2][3] = -(m[0][0] * (m[1][1] * m[2][3] - m[1][3] * m[2][1]) -
+                m[0][1] * (m[1][0] * m[2][3] - m[1][3] * m[2][0]) +
+                m[0][3] * (m[1][0] * m[2][1] - m[1][1] * m[2][0])) *
+              inv_det;
+
+  inv[3][0] = -(m[1][0] * (m[2][1] * m[3][2] - m[2][2] * m[3][1]) -
+                m[1][1] * (m[2][0] * m[3][2] - m[2][2] * m[3][0]) +
+                m[1][2] * (m[2][0] * m[3][1] - m[2][1] * m[3][0])) *
+              inv_det;
+
+  inv[3][1] = (m[0][0] * (m[2][1] * m[3][2] - m[2][2] * m[3][1]) -
+               m[0][1] * (m[2][0] * m[3][2] - m[2][2] * m[3][0]) +
+               m[0][2] * (m[2][0] * m[3][1] - m[2][1] * m[3][0])) *
+              inv_det;
+
+  inv[3][2] = -(m[0][0] * (m[1][1] * m[3][2] - m[1][2] * m[3][1]) -
+                m[0][1] * (m[1][0] * m[3][2] - m[1][2] * m[3][0]) +
+                m[0][2] * (m[1][0] * m[3][1] - m[1][1] * m[3][0])) *
+              inv_det;
+
+  inv[3][3] = (m[0][0] * (m[1][1] * m[2][2] - m[1][2] * m[2][1]) -
+               m[0][1] * (m[1][0] * m[2][2] - m[1][2] * m[2][0]) +
+               m[0][2] * (m[1][0] * m[2][1] - m[1][1] * m[2][0])) *
+              inv_det;
+
+  CCORE_RETURN_MATRIX_OBJ(inv, 4, 4);
+}
+static PyObject *Matrix_inverse4x4(PyObject *self, PyObject *_) {
+  MatrixObject *self_ = (MatrixObject *)self;
+  return (PyObject *)Matrix_inverse4x4_obj(self_);
+}
+static MatrixObject *Matrix_inverse_projection_obj(double cam_z) {
+  double **m = cCore_mk_id_matrix(4);
+  m[3][2] = -1. / cam_z;
+  CCORE_RETURN_MATRIX_OBJ(m, 4, 4);
+}
+
+static PyObject *Matrix_inverse_projection(PyObject *cls, PyObject *o) {
+  if (!PyNumber_Check(o)) {
+    return NULL;
+  }
+  double camz = PyFloat_AsDouble(o);
+  return (PyObject *)Matrix_inverse_projection_obj(camz);
+}
+static MatrixObject *Matrix_inverse_viewport_obj(double x, double y, double w,
+                                                 double h) {
+  double **m = cCore_mk_id_matrix(4);
+  m[0][0] = 2. / w;
+  m[1][1] = 2. / h;
+  m[2][2] = 1. / (VIEWPORT_DEPTH / 2.);
+  m[0][3] = -(2. * x / w) - 1.;
+  m[1][3] = -(2. * y / h) - 1.;
+  m[2][3] = -1;
+  CCORE_RETURN_MATRIX_OBJ(m, 4, 4);
+}
+static PyObject *Matrix_inverse_viewport(PyObject *cls, PyObject *args) {
+  double x, y, w, h;
+  if (!PyArg_ParseTuple(args, "dddd", &x, &y, &w, &h)) {
+    return NULL;
+  };
+  return (PyObject *)Matrix_inverse_viewport_obj(x, y, w, h);
+}
 // MISC
 
 static PyObject *Matrix__getitem__(PyObject *self, PyObject *idx) {
@@ -828,7 +983,16 @@ static PyMethodDef Matrix_methods[] = {
      "Creates a matrix from a vec3"},
     {"determinant", &Matrix_determinant, METH_NOARGS,
      "Returns the 3*3 matrix determinant"},
-    {"inverse", &Matrix_inverse, METH_NOARGS, "Returns the 3D inverse matrix"},
+    {"inverse", &Matrix_inverse, METH_NOARGS, "Returns the 3x3 inverse matrix"},
+    {"determinant4x4", &Matrix_determinant4x4, METH_NOARGS,
+     "Returns the 4*4 matrix determinant"},
+    {"inverse4x4", &Matrix_inverse4x4, METH_NOARGS,
+     "Returns the 4x4 inverse matrix"},
+    {"inverse_viewport", &Matrix_inverse_viewport, METH_VARARGS | METH_CLASS,
+     "Creates an inverse viewport matrix"},
+    {"inverse_projection", &Matrix_inverse_projection, METH_O | METH_CLASS,
+     "Creates an inverse projection matrix"},
+
     {NULL},
 };
 static PyMappingMethods Matrix_mapping = {

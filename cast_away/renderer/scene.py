@@ -9,7 +9,8 @@ class Scene:
         self._rimg = None
         self.screen = None
         self.default_kwargs = {}
-        self.defaults={}
+        self.defaults = {}
+
     def render(
         self,
         imw=None,
@@ -37,13 +38,15 @@ class Scene:
 
     def set_kwargs(self, **kwargs):
         self.default_kwargs.update(kwargs)
+
     def set_defaults(self, **dfs):
         self.defaults.update(dfs)
+
     def add_obj(self, ob):
         if self._rimg:
             imw, imh, kwargs = self._rimg
+            ob.set_defaults(**self.defaults)
             ob.set_render_image(imw, imh, **kwargs)
-        ob.set_defaults(**self.defaults)
         self.objects.append(ob)
 
     def call_all(self, function_name, *args, **kwargs):
