@@ -1,3 +1,4 @@
 dist
 build
 *.so
+__pycache/*

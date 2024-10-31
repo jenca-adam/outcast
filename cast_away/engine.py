@@ -4,7 +4,8 @@ import pygame_gui
 from . import loader
 from .fonts import HELVETICA_XSMALL
 
-FRAME=0xF000
+FRAME = 0xF000
+
 
 class AfterSequence:
     def __init__(self, engine, time):
@@ -62,7 +63,7 @@ class Engine:
 
     def add_event_handler(self, event, handler):
         if event not in self._event_handlers:
-            self._event_handlers[event]=set()
+            self._event_handlers[event] = set()
         self._event_handlers[event].add(handler)
 
     def _handle_events(self):
@@ -80,10 +81,15 @@ class Engine:
                     uih(event)
             self.uimgr.process_events(event)
         self._emit_frame_event()
+
     def _emit_frame_event(self):
-        fr_event=pygame.event.Event(FRAME, {"frame_counter":self.frame_counter, "delta":self.delta, "engine":self})
-        for eh in self._event_handlers.get(FRAME,set()):
+        fr_event = pygame.event.Event(
+            FRAME,
+            {"frame_counter": self.frame_counter, "delta": self.delta, "engine": self},
+        )
+        for eh in self._event_handlers.get(FRAME, set()):
             eh(fr_event)
+
     def add_ui_event_handler(self, handler, handler_id):
         self._uihandlers[handler_id] = handler
 
@@ -112,7 +118,7 @@ class Engine:
         try:
             # previous_frame_start=pygame.time.get_ticks()
             while not self._exit_flag:
-                self.frame_counter +=1
+                self.frame_counter += 1
                 # current_frame_start = pygame.time.get_ticks()
                 self.delta = self.clock.tick(self.fps) / 1000
                 # self.delta = (current_frame_start - previous_frame_start)/1000

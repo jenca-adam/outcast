@@ -27,6 +27,7 @@ class ObjFile:
         self.rotation = vec3.Vec3(0, 0, 0)
         self.translation = vec3.Vec3(0, 0, 0)
         self._cached_img = None
+        self.alive = True
         self.defaults = {}
         (
             self._projection,
@@ -82,9 +83,10 @@ class ObjFile:
         return new_objfile
 
     def cleanup(self):
-        self.textures={}
-        self.vertices=[]
-        self.vertex_normals=[]
+        self.textures = {}
+        self.vertices = []
+        self.vertex_normals = []
+        self.alive = False
 
     def add_texture(self, texture_type, texture_file):
         if isinstance(texture_file, str):
@@ -146,6 +148,10 @@ class ObjFile:
         self.translate(-self.translation)
         self.light_dir = LIGHT_DIR
 
+    def get_bounding_box(self):
+        minx, miny, minz = (math.inf for _ in range(3))
+        maxx, maxy, maxz = (-math.inf for _ in range(3))
+
     def render(
         self,
         imw=None,
@@ -159,6 +165,10 @@ class ObjFile:
         cam_z=None,
         **kwargs,
     ):
+        if not self.alive:
+            import warnings
+
+            warnings.warn("object used after cleanup (CHECK LAG?)")
         if zbuffer is None:
             zbuffer = {}
         cam_z = cam_z or self.defaults.get("cam_z", CAM_Z)

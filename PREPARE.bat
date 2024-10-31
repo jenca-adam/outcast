@@ -7,7 +7,7 @@ if %errorlevel% neq 0 (
     exit /b %errorlevel%
 )
 
-echo Compiling cCore.so extension module...
+echo Compiling cCore.pyd extension module...
 
 python setup.py build_ext -i >nul
 if %errorlevel% neq 0 (

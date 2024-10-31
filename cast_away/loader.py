@@ -30,7 +30,7 @@ def load_obj(obj_name):
         texture_fn = objdir / f"{obj_name}_{texture}.ppm"
         if not os.path.exists(texture_fn):
             logging.warn(f"texture {texture} for {obj_name} not found")
-            if texture=="diffuse":
+            if texture == "diffuse":
                 raise LookupError(f"missing diffuse texture for {obj_name}")
             continue
         obj.add_texture(texture, str(texture_fn))

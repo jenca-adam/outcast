@@ -35,6 +35,7 @@ class Scene:
                 **kwargs,
                 **self.default_kwargs,
             )
+        del zbuffer
 
     def set_kwargs(self, **kwargs):
         self.default_kwargs.update(kwargs)

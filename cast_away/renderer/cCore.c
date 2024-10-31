@@ -39,6 +39,13 @@
 #endif
 #define EPSILON 0.00000001
 #define VIEWPORT_DEPTH 255
+/* PYPY STUFF */
+#ifndef Py_T_PYSSIZET
+#define Py_T_PYSSIZET 19
+#endif
+#ifndef Py_T_DOUBLE
+#define Py_T_DOUBLE 4
+#endif
 /* FORWARD */
 
 static PyTypeObject Vec3Type, MatrixType, TextureType;
@@ -373,9 +380,9 @@ static PyObject *Vec3_from_matrix(PyObject *cls, PyObject *other) {
   double **m = (other_)->m;
 
   Vec3Object *obj = CCORE_NEW_VEC3;
-  obj->x = floor(m[0][0] / m[3][0]);
-  obj->y = floor(m[1][0] / m[3][0]);
-  obj->z = floor(-m[2][0] / m[3][0]);
+  obj->x = (m[0][0] / m[3][0]);
+  obj->y = (m[1][0] / m[3][0]);
+  obj->z = (-m[2][0] / m[3][0]);
   return (PyObject *)obj;
 }
 static PyObject *Vec3_from_matrix3(PyObject *cls, PyObject *other) {
@@ -692,6 +699,7 @@ static Vec3Object *Matrix__matmul__obj_2vec3(MatrixObject *self_,
   rev->x = re->m[0][0];
   rev->y = re->m[1][0];
   rev->z = re->m[2][0];
+  free(re);
   return rev;
 }
 static Vec3Object *Matrix_apply_to_vec3(MatrixObject *self_, Vec3Object *ve) {
@@ -730,6 +738,8 @@ static PyObject *Matrix__matmul__(PyObject *self, PyObject *other) {
       res->y = result->m[1][0];
       res->z = result->m[2][0];
     }
+    Py_DECREF(result);
+    Py_DECREF(other);
     return (PyObject *)res;
   }
 }

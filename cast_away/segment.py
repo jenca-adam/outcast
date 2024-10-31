@@ -8,9 +8,7 @@ from . import loader
 from . import helpers
 from . import sprites
 from .engine import FRAME
-import cmath
-import math
-
+from .mixer import MUSIC_CHANNEL, SFX_CHANNEL
 SEGMENTS = {}
 
 
@@ -31,13 +29,13 @@ def _segment_intro(engine):
     buildup = loader.SOUNDS["buildup.mp3"]
     titlefont = loader.FONTS[("airstrikeacad.ttf", 96)]
     engine.scene_3d.add_obj(horn)
-    announcement.play()
+    MUSIC_CHANNEL.play(announcement)
     engine.wait(500)
     engine.until(21500, helpers.rotate_object(horn, renderer.vec3.Vec3(0, 167.441, 0)))
-    engine.after(6000, lambda engine: buildup.play())
+    engine.after(6000, lambda engine: MUSIC_CHANNEL.play(buildup))
     engine.until(2000, helpers.translate_object(horn, renderer.vec3.Vec3(0, 0, -1)))
     engine.wait(20000)
-    engine.after(0, lambda engine: music.play())
+    engine.after(0, lambda engine: MUSIC_CHANNEL.play(music))
     engine.after(0, lambda engine: buildup.fadeout(2000))
     engine.until(8000, helpers.translate_object(horn, renderer.vec3.Vec3(0, 0, -0.09)))
     engine.wait(6000)
@@ -114,15 +112,19 @@ def _segment_main_game_intro(engine):
     engine.scene_3d.objects = set()
     enemy_ship = loader.MODELS["enemy_ship"]
     police_siren = loader.SOUNDS["police-siren.mp3"]
-    metal = loader.SOUNDS["metal.mp3"]
+    target = engine["target"]
+    info = DIFFICULTIES[target]
+    music = loader.SOUNDS[info["music"]]
+    engine["music"] = music
+    background_image = loader.IMAGES[info["background"]]
     gun_barrel = loader.MODELS["gun_barrel"]
     engine.scene_3d.add_obj(gun_barrel)
-    metal.play()
+    MUSIC_CHANNEL.play(music)
     runfont = loader.FONTS[("airstrikeacad.ttf", 96)]
     police_siren.set_volume(0.5)
-    police_siren.play()
+    SFX_CHANNEL.play(police_siren)
     background_small = pygame.transform.scale(
-        loader.IMAGES["outer-space.png"], (engine.scene_3d.imw, engine.scene_3d.imh)
+        background_image, (engine.scene_3d.imw, engine.scene_3d.imh)
     )
     background = pygame.transform.scale_by(background_small, PIXEL_SIZE)
 
@@ -166,6 +168,7 @@ def _segment_main_game(engine):
     asteroid = loader.MODELS["rock"]
     bullet = loader.MODELS["bullet"]
     gun_barrel = loader.MODELS["gun_barrel"]
+    gunshot = loader.SOUNDS["gunshot.mp3"]
     loader.SOUNDS["police-siren.mp3"].fadeout(5000)
     asteroid.translate(renderer.vec3.Vec3(-10, 0, 0))
     assert (
@@ -177,15 +180,19 @@ def _segment_main_game(engine):
     engine.sprite_group.add(crosshair)
 
     def _frame_handler(event):
-        if any(pygame.mouse.get_pressed()) and not event.frame_counter%3:
-            epos=pygame.mouse.get_pos()
+        if any(pygame.mouse.get_pressed()) and not event.frame_counter % 2:
+            epos = pygame.mouse.get_pos()
             screen_pos = (
                 (epos[0] - engine.scene_offset[0]) / PIXEL_SIZE,
                 (epos[1] - engine.scene_offset[1]) / PIXEL_SIZE,
             )
-            position = helpers.to_world_space(screen_pos, enemy_ship._projection_x_viewport)
+            SFX_CHANNEL.play(gunshot)
+            position = helpers.to_world_space(
+                screen_pos, enemy_ship._projection_x_viewport
+            )
             print("POSITION", position, "E", screen_pos)
             sprites.Bullet(engine.scene_3d, gbcp, position-gbcp, engine).fire()
+
     def _ship_loop_move(ship):
         engine.until(
             300,
@@ -198,7 +205,7 @@ def _segment_main_game(engine):
                 ),
                 clamp_top=-2,
                 clamp_bottom=8,
-                clamp_left=-7,
+                clamp_left=-6,
                 clamp_right=3,
                 clamp_front=-10,
             ),
@@ -236,12 +243,13 @@ def _segment_main_game(engine):
         engine.scene_3d.add_obj(a)
         engine.update()
 
-        engine.after(random.randrange(500, 2000), lambda engine: _asteroids_loop())
+        #engine.after(random.randrange(2000, 4000), lambda engine: _asteroids_loop())
 
     _asteroids_loop()
     _ship_loop_move(enemy_ship)
     engine.add_event_handler(FRAME, _frame_handler)
     engine.add_event_handler(pygame.MOUSEMOTION, crosshair.mousemotion_handler)
+
 
 def play_segment(segment_name, engine):
     SEGMENTS[segment_name](engine)

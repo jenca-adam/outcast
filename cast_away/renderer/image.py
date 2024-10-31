@@ -73,7 +73,8 @@ class Image:
         return self.arr[y][x]
 
     def __setitem__(self, coords, pix):
-        x, y = map(int, coords)
+        #x, y = map(int, coords)
+        x,y=coords
         # print(x,y,pix)
         if self.backend == ImageBackend.PGM:
             self._pgm_putpixel(x, y, pix)

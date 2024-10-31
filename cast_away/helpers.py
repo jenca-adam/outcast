@@ -1,6 +1,13 @@
 from .renderer import Vec3, Matrix
 
-
+def get_dict(ob):
+    if hasattr(ob,"__dict__"):
+        return ob.__dict__
+    d={}
+    for key in dir(ob):
+        if "__" not in key:
+            d[key]=getattr(ob,key)
+    return d
 def get_center(sc):
     sz = sc.get_size()
     return (sz[0] // 2, sz[1] // 2)
@@ -79,9 +86,5 @@ def fadein_text(text, font, time, color, cp):
 def to_world_space(click_pos, matrix):
     im = matrix.inverse4x4()
     v3 = Vec3(*click_pos, 0)
-    m = Matrix.from_vector(v3)
-    ao = (im @ m)
-    o = Vec3.from_matrix3(ao)/ao[3][0]
-
-    
-    return o
+    o = im @ Matrix.from_vector(v3)
+    return Vec3.from_matrix3(o) / o[3][0]
