@@ -5,3 +5,4 @@ python setup.py build_ext -i >/dev/null || { echo -e "compile failed with return
 rm -r build
 echo "Compiling using pyinstaller..."
 sh PYI_FREEZE.sh >/dev/null 2>/dev/null
+sh PACK.sh

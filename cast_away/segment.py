@@ -29,7 +29,7 @@ def _segment_intro(engine):
     buildup = loader.SOUNDS["buildup.mp3"]
     titlefont = loader.FONTS[("airstrikeacad.ttf", 96)]
     engine.scene_3d.add_obj(horn)
-    MUSIC_CHANNEL.play(announcement)
+    SFX_CHANNEL.play(announcement)
     engine.wait(500)
     engine.until(21500, helpers.rotate_object(horn, renderer.vec3.Vec3(0, 167.441, 0)))
     engine.after(6000, lambda engine: MUSIC_CHANNEL.play(buildup))

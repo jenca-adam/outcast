@@ -2,3 +2,4 @@ dist
 build
 *.so
 __pycache/*
+gzipped_dist/*
