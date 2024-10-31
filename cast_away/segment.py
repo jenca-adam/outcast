@@ -191,6 +191,7 @@ def _segment_main_game(engine):
                 screen_pos, enemy_ship._projection_x_viewport
             )
             print("POSITION", position, "E", screen_pos)
+            engine.until(100,helpers.rotate_object(gun_barrel,renderer.vec3.Vec3(0,0,360)))
             sprites.Bullet(engine.scene_3d, gbcp, position-gbcp, engine).fire()
 
     def _ship_loop_move(ship):
@@ -203,11 +204,12 @@ def _segment_main_game(engine):
                     random.randrange(-10, 11) / 10,
                     random.randrange(-10, 11) / 10,
                 ),
-                clamp_top=-2,
+                clamp_top=0,
                 clamp_bottom=8,
-                clamp_left=-6,
-                clamp_right=3,
-                clamp_front=-10,
+                clamp_left=-5,
+                clamp_right=1,
+                clamp_front=10,
+                clamp_back=20
             ),
         )
         engine.after(300, lambda engine: _ship_loop_move(ship))
@@ -243,7 +245,7 @@ def _segment_main_game(engine):
         engine.scene_3d.add_obj(a)
         engine.update()
 
-        #engine.after(random.randrange(2000, 4000), lambda engine: _asteroids_loop())
+        engine.after(random.randrange(2000, 4000), lambda engine: _asteroids_loop())
 
     _asteroids_loop()
     _ship_loop_move(enemy_ship)

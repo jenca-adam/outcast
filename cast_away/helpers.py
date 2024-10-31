@@ -33,18 +33,19 @@ def translate_object(
 ):
     def to_inner(engine):
         obj.translate(speed * engine.delta)
+        print(obj.translation)
         if clamp_top is not None and obj.translation.y < clamp_top:
-            obj.translate(Vec3(clamp_top - obj.translation.y))
+            obj.translate(Vec3(0,clamp_top - obj.translation.y,0))
         elif clamp_bottom is not None and obj.translation.y > clamp_bottom:
-            obj.translate(Vec3(clamp_bottom - obj.translation.y))
+            obj.translate(Vec3(0,clamp_bottom - obj.translation.y,0))
         if clamp_left is not None and obj.translation.x < clamp_left:
-            obj.translate(Vec3(clamp_left - obj.translation.x))
+            obj.translate(Vec3(clamp_left - obj.translation.x,0,0))
         elif clamp_right is not None and obj.translation.x > clamp_right:
-            obj.translate(Vec3(clamp_right - obj.translation.x))
+            obj.translate(Vec3(clamp_right - obj.translation.x,0,0))
         if clamp_front is not None and obj.translation.z < clamp_front:
-            obj.translate(Vec3(clamp_front - obj.translation.z))
+            obj.translate(Vec3(0,0,clamp_front - obj.translation.z))
         elif clamp_back is not None and obj.translation.z > clamp_back:
-            obj.translate(Vec3(clamp_back - obj.translation.z))
+            obj.translate(Vec3(0,0,clamp_back - obj.translation.z))
         engine.update()
 
     return to_inner
