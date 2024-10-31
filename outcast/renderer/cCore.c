@@ -75,6 +75,10 @@ typedef struct {
   Py_ssize_t width;
   Py_ssize_t height;
 } TextureObject;
+typedef struct {
+  PyObject_HEAD Vec3Object *min;
+  Vec3Object *max;
+} BoxObject;
 
 typedef enum { PHONG, GOURAUD, NONE, DEPTH } Lighting;
 static double Vec3_get_length_obj_(Vec3Object *self_);
@@ -1170,7 +1174,7 @@ static PyMemberDef Texture_members[] = {
 };
 static PyMethodDef Texture_methods[] = {
     {"from_ppm", Texture_from_ppm, METH_VARARGS | METH_CLASS,
-     "loads the texture froma ppm file"},
+     "loads the texture from a ppm file"},
     {NULL, NULL, 0, NULL},
 };
 static PyTypeObject TextureType = {
@@ -1185,6 +1189,74 @@ static PyTypeObject TextureType = {
     .tp_init = (initproc)Texture_init,
     .tp_dealloc = (destructor)Texture_dealloc,
     .tp_as_mapping = &Texture_mapping,
+};
+//// BOX
+static PyObject *Box_new(PyTypeObject *type, PyObject *args, PyObject *kwds) {
+  BoxObject *self;
+  self = (BoxObject *)type->tp_alloc(type, 0);
+  if (self != NULL) {
+    self->min = NULL;
+    self->max = NULL;
+  }
+  return (PyObject *)self;
+}
+static int Box_init(BoxObject *self, PyObject *args, PyObject *kwds) {
+  Vec3Object *min = NULL, *max = NULL;
+  static char *kwlist[] = {"min", "max", NULL};
+  if (!PyArg_ParseTupleAndKeywords(args, kwds, "O!O!", kwlist, &Vec3Type, &min,
+                                   &Vec3Type, &max)) {
+    return -1;
+  }
+  self->min = min;
+  self->max = max;
+  Py_INCREF(self->min);
+  Py_INCREF(self->max);
+  return 0;
+}
+static void Box_dealloc(BoxObject *self) {
+  if (self->min != NULL) {
+    Py_XDECREF(self->min);
+  }
+  if (self->max != NULL) {
+    Py_XDECREF(self->max);
+  }
+}
+
+static bool Box_collides_with_vec3_obj(BoxObject *self, Vec3Object *other) {
+  return ((other->x >= self->min->x && other->x <= self->max->x) &&
+          (other->y >= self->min->y && other->y <= self->max->y) &&
+          (other->z >= self->min->z && other->z <= self->max->z));
+}
+static PyObject *Box_collides_with(PyObject *self, PyObject *other) {
+  if (PyObject_TypeCheck(other, &Vec3Type)) {
+    return PyBool_FromLong(
+        Box_collides_with_vec3_obj((BoxObject *)self, (Vec3Object *)other));
+  }
+  PyErr_SetString(PyExc_TypeError, "expected a Box or Vec3 arg");
+  return NULL;
+}
+static PyMemberDef Box_members[] = {
+    {"min", Py_T_OBJECT_EX, offsetof(BoxObject, min), 0,
+     "Minimal point of the AABB"},
+    {"max", Py_T_OBJECT_EX, offsetof(BoxObject, max), 0,
+     "Maximal point of the AABB"},
+    {NULL},
+};
+static PyMethodDef Box_methods[] = {
+    {"collides_with", Box_collides_with, METH_O, "Collision check"},
+    {NULL, NULL, 0, NULL},
+};
+static PyTypeObject BoxType = {
+    PyVarObject_HEAD_INIT(NULL, 0).tp_name = "cCore.Box",
+    .tp_doc = "an AABB class for collision checking",
+    .tp_basicsize = sizeof(BoxObject),
+    .tp_itemsize = 0,
+    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
+    .tp_members = Box_members,
+    .tp_methods = Box_methods,
+    .tp_new = Box_new,
+    .tp_init = (initproc)Box_init,
+    .tp_dealloc = (destructor)Box_dealloc,
 };
 //// formerly core.py
 static MatrixObject *
@@ -1630,6 +1702,8 @@ PyMODINIT_FUNC PyInit_cCore(void) {
     return NULL;
   if (PyType_Ready(&TextureType) < 0)
     return NULL;
+  if (PyType_Ready(&BoxType) < 0)
+    return NULL;
   m = PyModule_Create(&ccoremodule);
   if (m == NULL)
     return NULL;
@@ -1649,6 +1723,12 @@ PyMODINIT_FUNC PyInit_cCore(void) {
   Py_INCREF(&TextureType);
   if (PyModule_AddObject(m, "Texture", (PyObject *)&TextureType) < 0) {
     Py_DECREF(&TextureType);
+    Py_DECREF(m);
+    return NULL;
+  }
+  Py_INCREF(&BoxType);
+  if (PyModule_AddObject(m, "Box", (PyObject *)&BoxType) < 0) {
+    Py_DECREF(&BoxType);
     Py_DECREF(m);
     return NULL;
   }

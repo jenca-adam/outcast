@@ -1,13 +1,16 @@
 from .renderer import Vec3, Matrix
 
+
 def get_dict(ob):
-    if hasattr(ob,"__dict__"):
+    if hasattr(ob, "__dict__"):
         return ob.__dict__
-    d={}
+    d = {}
     for key in dir(ob):
         if "__" not in key:
-            d[key]=getattr(ob,key)
+            d[key] = getattr(ob, key)
     return d
+
+
 def get_center(sc):
     sz = sc.get_size()
     return (sz[0] // 2, sz[1] // 2)
@@ -35,17 +38,17 @@ def translate_object(
         obj.translate(speed * engine.delta)
         print(obj.translation)
         if clamp_top is not None and obj.translation.y < clamp_top:
-            obj.translate(Vec3(0,clamp_top - obj.translation.y,0))
+            obj.translate(Vec3(0, clamp_top - obj.translation.y, 0))
         elif clamp_bottom is not None and obj.translation.y > clamp_bottom:
-            obj.translate(Vec3(0,clamp_bottom - obj.translation.y,0))
+            obj.translate(Vec3(0, clamp_bottom - obj.translation.y, 0))
         if clamp_left is not None and obj.translation.x < clamp_left:
-            obj.translate(Vec3(clamp_left - obj.translation.x,0,0))
+            obj.translate(Vec3(clamp_left - obj.translation.x, 0, 0))
         elif clamp_right is not None and obj.translation.x > clamp_right:
-            obj.translate(Vec3(clamp_right - obj.translation.x,0,0))
+            obj.translate(Vec3(clamp_right - obj.translation.x, 0, 0))
         if clamp_front is not None and obj.translation.z < clamp_front:
-            obj.translate(Vec3(0,0,clamp_front - obj.translation.z))
+            obj.translate(Vec3(0, 0, clamp_front - obj.translation.z))
         elif clamp_back is not None and obj.translation.z > clamp_back:
-            obj.translate(Vec3(0,0,clamp_back - obj.translation.z))
+            obj.translate(Vec3(0, 0, clamp_back - obj.translation.z))
         engine.update()
 
     return to_inner

@@ -9,6 +9,7 @@ from . import helpers
 from . import sprites
 from .engine import FRAME
 from .mixer import MUSIC_CHANNEL, SFX_CHANNEL
+
 SEGMENTS = {}
 
 
@@ -191,8 +192,10 @@ def _segment_main_game(engine):
                 screen_pos, enemy_ship._projection_x_viewport
             )
             print("POSITION", position, "E", screen_pos)
-            engine.until(100,helpers.rotate_object(gun_barrel,renderer.vec3.Vec3(0,0,360)))
-            sprites.Bullet(engine.scene_3d, gbcp, position-gbcp, engine).fire()
+            engine.until(
+                100, helpers.rotate_object(gun_barrel, renderer.vec3.Vec3(0, 0, 360))
+            )
+            sprites.Bullet(engine.scene_3d, gbcp, position - gbcp, engine).fire()
 
     def _ship_loop_move(ship):
         engine.until(
@@ -209,7 +212,7 @@ def _segment_main_game(engine):
                 clamp_left=-5,
                 clamp_right=1,
                 clamp_front=10,
-                clamp_back=20
+                clamp_back=20,
             ),
         )
         engine.after(300, lambda engine: _ship_loop_move(ship))

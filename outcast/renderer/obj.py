@@ -151,6 +151,14 @@ class ObjFile:
     def get_bounding_box(self):
         minx, miny, minz = (math.inf for _ in range(3))
         maxx, maxy, maxz = (-math.inf for _ in range(3))
+        for vertex in self.vertices:
+            minx = min(minx, vertex.x)
+            miny = min(miny, vertex.y)
+            minz = min(minz, vertex.z)
+            maxx = max(maxx, vertex.x)
+            maxy = max(maxy, vertex.y)
+            maxz = max(maxz, vertex.z)
+        return cCore.Box(cCore.Vec3(minx, miny, minz), cCore.Vec3(maxx, maxy, maxz))
 
     def render(
         self,
@@ -169,6 +177,7 @@ class ObjFile:
             import warnings
 
             warnings.warn("object used after cleanup (CHECK LAG?)")
+            return
         if zbuffer is None:
             zbuffer = {}
         cam_z = cam_z or self.defaults.get("cam_z", CAM_Z)

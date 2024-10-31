@@ -4,22 +4,31 @@ import time
 from . import msgbox
 from .settings import MIXER_WAIT_TIME
 from .helpers import get_dict
+
+
 class Channel:
     def __init__(self, name, pyg_channel=None):
-        self.name=name
-        self.channel=pyg_channel
+        self.name = name
+        self.channel = pyg_channel
+
     def set_channel(self, pyg_channel):
-        self.channel=pyg_channel
+        self.channel = pyg_channel
         self.__dict__.update(get_dict(self.channel))
+
     def __getattr__(self, attr):
         if hasattr(pygame.mixer.Channel, attr):
             if self.channel is None:
                 if callable(getattr(pygame.mixer.Channel, attr)):
-                    raise RuntimeError(f"{self.name}: can't call {attr}(): not initialized")
+                    raise RuntimeError(
+                        f"{self.name}: can't call {attr}(): not initialized"
+                    )
                 else:
-                    raise RuntimeError(f"{self.name}: can't get {attr}: not initialized")
+                    raise RuntimeError(
+                        f"{self.name}: can't get {attr}: not initialized"
+                    )
             return getattr(self.channel, attr)
         raise AttributeError(attr)
+
 
 MUSIC_CHANNEL = Channel("music")
 SFX_CHANNEL = Channel("sfx")
