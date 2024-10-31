@@ -82,9 +82,9 @@ class ObjFile:
         return new_objfile
 
     def cleanup(self):
-        del self.textures
-        del self.vertices
-        del self.vertex_normals
+        self.textures={}
+        self.vertices=[]
+        self.vertex_normals=[]
 
     def add_texture(self, texture_type, texture_file):
         if isinstance(texture_file, str):
@@ -109,7 +109,7 @@ class ObjFile:
     def rotate(self, thetas, degrees=True):
         if degrees:
             thetas = vec3.array(math.radians(theta) for theta in thetas)
-            self.rotation += thetas
+        self.rotation += thetas
         cp = self.centerpoint
         self.translate(-cp)
         self.apply(vec3.Matrix.rotx(thetas.x))

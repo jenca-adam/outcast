@@ -31,7 +31,7 @@ def main():
         # run_intro(screen)
         cast_away = engine.Engine(scene, screen, image_offset, TARGET_FPS)
         segment.play_segment(INITIAL_SEGMENT_NAME, cast_away)
-        #segment.play_segment("main_game_intro", cast_away)
+        # segment.play_segment("main_game_intro", cast_away)
         cast_away.loop()
     except:
         pygame.mixer.quit()

@@ -7,6 +7,10 @@ from . import renderer
 from . import loader
 from . import helpers
 from . import sprites
+from .engine import FRAME
+import cmath
+import math
+
 SEGMENTS = {}
 
 
@@ -20,7 +24,7 @@ def add_segment(segment_name):
 
 @add_segment("intro")
 def _segment_intro(engine):
-    engine.scene_3d.objects = []
+    engine.scene_3d.objects = set()
     horn = loader.MODELS["horn"]
     announcement = loader.SOUNDS["announcement.mp3"]
     music = loader.SOUNDS["theme_violin.mp3"]
@@ -70,7 +74,7 @@ def _segment_destination_select(engine):
             loader.SOUNDS["theme_violin.mp3"].fadeout(2000)
             play_segment("main_game_intro", engine)
 
-    engine.scene_3d.objects = []
+    engine.scene_3d.objects = set()
     engine.update()
     label = pygame_gui.elements.UILabel(
         relative_rect=pygame.Rect((0, -500), (-1, -1)),
@@ -107,10 +111,12 @@ def _segment_destination_select(engine):
 @add_segment("main_game_intro")
 def _segment_main_game_intro(engine):
     engine.scene_3d.set_kwargs(backface_culling=False)  # dirty fix
-    engine.scene_3d.objects = []
+    engine.scene_3d.objects = set()
     enemy_ship = loader.MODELS["enemy_ship"]
     police_siren = loader.SOUNDS["police-siren.mp3"]
     metal = loader.SOUNDS["metal.mp3"]
+    gun_barrel = loader.MODELS["gun_barrel"]
+    engine.scene_3d.add_obj(gun_barrel)
     metal.play()
     runfont = loader.FONTS[("airstrikeacad.ttf", 96)]
     police_siren.set_volume(0.5)
@@ -128,7 +134,7 @@ def _segment_main_game_intro(engine):
     )
     engine.wait(750)
     engine.until(
-        2000, helpers.translate_object(enemy_ship, renderer.vec3.Vec3(-1, 2, 0))
+        2000, helpers.translate_object(enemy_ship, renderer.vec3.Vec3(-1.2, 2, 0))
     )
     engine.until(2000, helpers.rotate_object(enemy_ship, renderer.vec3.Vec3(0, 90, 0)))
     engine.wait(2000)
@@ -158,24 +164,29 @@ def _segment_main_game(engine):
     engine.reset_wait_time()
     enemy_ship = loader.MODELS["enemy_ship"]
     asteroid = loader.MODELS["rock"]
+    bullet = loader.MODELS["bullet"]
+    gun_barrel = loader.MODELS["gun_barrel"]
     loader.SOUNDS["police-siren.mp3"].fadeout(5000)
     asteroid.translate(renderer.vec3.Vec3(-10, 0, 0))
     assert (
-        enemy_ship in engine.scene_3d.objects
+        enemy_ship in engine.scene_3d.objects and gun_barrel in engine.scene_3d.objects
     ), "main_game segment run before main_game_intro"
-    #engine.scene_3d.objects.remove(enemy_ship)
+    gbcp = gun_barrel.calculate_centerpoint()
+    # engine.scene_3d.objects.remove(enemy_ship)
     crosshair = sprites.Crosshair(engine.screen, engine.scene_clamp)
     engine.sprite_group.add(crosshair)
-    def _click_handler(event):
-        screen_pos = (
-            (event.pos[0] - engine.scene_offset[0]) / PIXEL_SIZE,
-            (event.pos[1] - engine.scene_offset[1]) / PIXEL_SIZE,
-        )
-        position = helpers.to_world_space(screen_pos, enemy_ship._projection_x_viewport)
-        print("POSITION", position, "E", screen_pos)
 
+    def _frame_handler(event):
+        if any(pygame.mouse.get_pressed()) and not event.frame_counter%3:
+            epos=pygame.mouse.get_pos()
+            screen_pos = (
+                (epos[0] - engine.scene_offset[0]) / PIXEL_SIZE,
+                (epos[1] - engine.scene_offset[1]) / PIXEL_SIZE,
+            )
+            position = helpers.to_world_space(screen_pos, enemy_ship._projection_x_viewport)
+            print("POSITION", position, "E", screen_pos)
+            sprites.Bullet(engine.scene_3d, gbcp, position-gbcp, engine).fire()
     def _ship_loop_move(ship):
-        print("MOVE")
         engine.until(
             300,
             helpers.translate_object(
@@ -192,7 +203,6 @@ def _segment_main_game(engine):
                 clamp_front=-10,
             ),
         )
-        print(ship.calculate_centerpoint())
         engine.after(300, lambda engine: _ship_loop_move(ship))
 
     def _asteroids_loop():
@@ -230,7 +240,7 @@ def _segment_main_game(engine):
 
     _asteroids_loop()
     _ship_loop_move(enemy_ship)
-    engine.add_event_handler(pygame.MOUSEBUTTONDOWN, _click_handler)
+    engine.add_event_handler(FRAME, _frame_handler)
     engine.add_event_handler(pygame.MOUSEMOTION, crosshair.mousemotion_handler)
 
 def play_segment(segment_name, engine):

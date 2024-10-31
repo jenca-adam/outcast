@@ -79,6 +79,9 @@ def fadein_text(text, font, time, color, cp):
 def to_world_space(click_pos, matrix):
     im = matrix.inverse4x4()
     v3 = Vec3(*click_pos, 0)
-    o=Vec3.from_matrix3(im @ Matrix.from_vector(v3))
-    o.z=-o.z
+    m = Matrix.from_vector(v3)
+    ao = (im @ m)
+    o = Vec3.from_matrix3(ao)/ao[3][0]
+
+    
     return o

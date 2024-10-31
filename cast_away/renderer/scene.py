@@ -3,7 +3,7 @@ from . import cCore
 
 class Scene:
     def __init__(self):
-        self.objects = []
+        self.objects = set()
         self.imh = 0
         self.imw = 0
         self._rimg = None
@@ -47,7 +47,7 @@ class Scene:
             imw, imh, kwargs = self._rimg
             ob.set_defaults(**self.defaults)
             ob.set_render_image(imw, imh, **kwargs)
-        self.objects.append(ob)
+        self.objects.add(ob)
 
     def call_all(self, function_name, *args, **kwargs):
         for ob in self.objects:

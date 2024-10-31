@@ -4,6 +4,7 @@ import pygame_gui
 from . import loader
 from .fonts import HELVETICA_XSMALL
 
+FRAME=0xF000
 
 class AfterSequence:
     def __init__(self, engine, time):
@@ -30,6 +31,7 @@ class Engine:
         self._topcalls = set()
         self._uihandlers = {}
         self.fps = fps
+        self.frame_counter = 0
         self._background = None
         self._exit_flag = False
         self._update_flag = False
@@ -42,6 +44,7 @@ class Engine:
             theme_path=loader.FILES / "theme/theme.json",
         )
         self.sprite_group = pygame.sprite.Group()
+
     def wait(self, ms):
         self.total_time_offset += ms
 
@@ -58,7 +61,9 @@ class Engine:
         self._update_flag = True
 
     def add_event_handler(self, event, handler):
-        self._event_handlers[event] = handler
+        if event not in self._event_handlers:
+            self._event_handlers[event]=set()
+        self._event_handlers[event].add(handler)
 
     def _handle_events(self):
         for key in self._key_handlers:
@@ -66,14 +71,19 @@ class Engine:
                 self._key_handlers[key]()
         for event in pygame.event.get():
             if event.type in self._event_handlers:
-                self._event_handlers[event.type](event)
+                for eh in self._event_handlers[event.type]:
+                    eh(event)
             if event.type == pygame.QUIT:
                 self.quit()
             if pygame.USEREVENT <= event.type <= pygame.NUMEVENTS:
                 for uih in list(self._uihandlers.values()):
                     uih(event)
             self.uimgr.process_events(event)
-
+        self._emit_frame_event()
+    def _emit_frame_event(self):
+        fr_event=pygame.event.Event(FRAME, {"frame_counter":self.frame_counter, "delta":self.delta, "engine":self})
+        for eh in self._event_handlers.get(FRAME,set()):
+            eh(fr_event)
     def add_ui_event_handler(self, handler, handler_id):
         self._uihandlers[handler_id] = handler
 
@@ -102,6 +112,7 @@ class Engine:
         try:
             # previous_frame_start=pygame.time.get_ticks()
             while not self._exit_flag:
+                self.frame_counter +=1
                 # current_frame_start = pygame.time.get_ticks()
                 self.delta = self.clock.tick(self.fps) / 1000
                 # self.delta = (current_frame_start - previous_frame_start)/1000

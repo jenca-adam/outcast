@@ -5,5 +5,16 @@
 	},
 	"rock":{
 		"scale":1.5
+	},
+	"bullet":
+	{
+		"rotate":[90,0,0],
+		"scale":4
+	},
+	"gun_barrel":
+	{
+		"scale":0.02,
+		"rotate":[15,0,0],
+		"translate":[0,1,0]
 	}
 }

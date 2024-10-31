@@ -1096,7 +1096,9 @@ static PyObject *Texture_from_ppm(PyObject *cls, PyObject *args) {
     return NULL;
   }
   if (maxn != 255) {
-    PyErr_SetString(PyExc_NotImplementedError, "ppm not in 24-bit format");
+    char *es;
+    asprintf(&es, "ppm not in 24-bit format: %s", fn);
+    PyErr_SetString(PyExc_NotImplementedError, es);
     return NULL;
   }
   Vec3Object ***m = malloc(width * height * sizeof(Vec3Object *));
