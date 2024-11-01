@@ -165,7 +165,10 @@ def _segment_main_game_intro(engine):
 @add_segment("main_game")
 def _segment_main_game(engine):
     def kill_handler(ship):
-        raise NotImplementedError
+        ship.kill()
+        # TODO
+        # spawn another
+
     engine.reset_wait_time()
     enemy_ship = loader.MODELS["enemy_ship"]
     asteroid = loader.MODELS["rock"]
@@ -179,13 +182,13 @@ def _segment_main_game(engine):
     ), "main_game segment run before main_game_intro"
     gbcp = gun_barrel.calculate_centerpoint()
     # engine.scene_3d.objects.remove(enemy_ship)
-    
+
     enemy = sprites.Enemy(ENEMY_HP, enemy_ship, engine, kill_handler)
     crosshair = sprites.Crosshair(engine.screen, engine.scene_clamp)
     engine.sprite_group.add(crosshair)
 
     def _frame_handler(event):
-        if any(pygame.mouse.get_pressed()) and not event.frame_counter % 2:
+        if any(pygame.mouse.get_pressed()) and not event.frame_counter%2:
             epos = pygame.mouse.get_pos()
             screen_pos = (
                 (epos[0] - engine.scene_offset[0]) / PIXEL_SIZE,
@@ -199,9 +202,7 @@ def _segment_main_game(engine):
             engine.until(
                 100, helpers.rotate_object(gun_barrel, renderer.vec3.Vec3(0, 0, 360))
             )
-            sprites.Bullet(
-                engine.scene_3d, gbcp, position - gbcp, engine, enemy
-            ).fire()
+            sprites.Bullet(engine.scene_3d, gbcp, position - gbcp, engine, enemy).fire()
 
     def _asteroids_loop():
         a = asteroid.clone()
