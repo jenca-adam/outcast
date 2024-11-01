@@ -36,7 +36,7 @@ def translate_object(
 ):
     def to_inner(engine):
         obj.translate(speed * engine.delta)
-        print(obj.translation)
+        # print(obj.translation)
         if clamp_top is not None and obj.translation.y < clamp_top:
             obj.translate(Vec3(0, clamp_top - obj.translation.y, 0))
         elif clamp_bottom is not None and obj.translation.y > clamp_bottom:

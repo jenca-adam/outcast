@@ -16,10 +16,10 @@ def background(f):
 
 class ObjFile:
     def __init__(self, vertices, texture_vertices, vertex_normals, faces, textures={}):
-        self.vertices = vertices
-        self.texture_vertices = texture_vertices
-        self.vertex_normals = vertex_normals
-        self.faces = faces
+        self.vertices = self._vertices = vertices
+        self.texture_vertices = self._texture_vertices = texture_vertices
+        self.vertex_normals = self._vertex_normals = vertex_normals
+        self.faces = self._faces = faces
         self.centerpoint = self.calculate_centerpoint()
         self.light_dir = LIGHT_DIR
         self.textures = {}
@@ -71,18 +71,25 @@ class ObjFile:
         self._projection_x_viewport = self._viewport @ self._projection
 
     def clone(self, copy_transforms=False):
-        new_objfile = ObjFile(
-            self.vertices,
-            self.texture_vertices,
-            self.vertex_normals,
-            self.faces,
-            self.textures,
-        )
+        if not copy_transforms:
+            new_objfile = ObjFile(
+                self._vertices,
+                self._texture_vertices,
+                self._vertex_normals,
+                self._faces,
+                self.textures,
+            )
+        else:
+            new_objfile = ObjFile(
+                self.vertices,
+                self.texture_vertices,
+                self.vertex_normals,
+                self.faces,
+                self.textures,
+            )
+
         new_objfile._cached_img = self._cached_img
         new_objfile._imw, new_objfile._imh = (self._imw, self._imh)
-        if copy_transforms:
-            new_objfile.translate(self.translation)
-            new_objfile.rotate(self.rotation)
         return new_objfile
 
     def cleanup(self):

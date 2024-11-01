@@ -164,10 +164,51 @@ def _segment_main_game_intro(engine):
 
 @add_segment("main_game")
 def _segment_main_game(engine):
-    def kill_handler(ship):
+    def spawn_new_ship(engine):
+        nonlocal enemy_ship
+        enemy_ship = enemy_ship.clone()
+        enemy_ship.rotate(renderer.vec3.Vec3(0, -90, 0))
+        engine.scene_3d.add_obj(enemy_ship)
+        engine.reset_wait_time()
+        engine.until(
+            2000, helpers.translate_object(enemy_ship, renderer.vec3.Vec3(0, 0, 10))
+        )
+        engine.wait(750)
+        engine.until(
+            2000, helpers.translate_object(enemy_ship, renderer.vec3.Vec3(-1.2, 2, 0))
+        )
+
+        engine.until(
+            2000, helpers.rotate_object(enemy_ship, renderer.vec3.Vec3(0, 90, 15))
+        )
+        engine.wait(2000)
+        engine.until(
+            1500, helpers.translate_object(enemy_ship, renderer.vec3.Vec3(0, 0, -3))
+        )
+
+        def mkenemy(*_):
+            enm = sprites.Enemy(ENEMY_HP, enemy_ship, engine, _ship_kill_handler)
+            enm.loop()
+            enemies.add(enm)
+
+        engine.after(1500, mkenemy)
+
+    def _ship_kill_handler(ship):
         ship.kill()
+        enemies.remove(ship)
+        engine.after(2000, spawn_new_ship)
+
+        # - cool ass score counter
+
+    def _asteroid_kill_handler(a):
+
+        a.kill()
         # TODO
-        # spawn another
+        # - cool ass score counter
+
+    def _asteroid_oldage_handler(a):
+        # TODO optimize bullets to actually make shooting asteroids possible
+        pass
 
     engine.reset_wait_time()
     enemy_ship = loader.MODELS["enemy_ship"]
@@ -183,12 +224,13 @@ def _segment_main_game(engine):
     gbcp = gun_barrel.calculate_centerpoint()
     # engine.scene_3d.objects.remove(enemy_ship)
 
-    enemy = sprites.Enemy(ENEMY_HP, enemy_ship, engine, kill_handler)
+    enemy = sprites.Enemy(ENEMY_HP, enemy_ship, engine, _ship_kill_handler)
+    enemies = {enemy}
     crosshair = sprites.Crosshair(engine.screen, engine.scene_clamp)
     engine.sprite_group.add(crosshair)
 
     def _frame_handler(event):
-        if any(pygame.mouse.get_pressed()) and not event.frame_counter%2:
+        if any(pygame.mouse.get_pressed()) and not event.frame_counter % 2:
             epos = pygame.mouse.get_pos()
             screen_pos = (
                 (epos[0] - engine.scene_offset[0]) / PIXEL_SIZE,
@@ -198,44 +240,19 @@ def _segment_main_game(engine):
             position = helpers.to_world_space(
                 screen_pos, enemy_ship._projection_x_viewport
             )
-            print("POSITION", position, "E", screen_pos)
+            # print("POSITION", position, "E", screen_pos)
             engine.until(
                 100, helpers.rotate_object(gun_barrel, renderer.vec3.Vec3(0, 0, 360))
             )
-            sprites.Bullet(engine.scene_3d, gbcp, position - gbcp, engine, enemy).fire()
+            sprites.Bullet(
+                engine.scene_3d, gbcp, position - gbcp, engine, enemies
+            ).fire()
 
     def _asteroids_loop():
-        a = asteroid.clone()
-        a.translate(
-            renderer.vec3.Vec3(
-                random.randrange(-10, 11) / 10,
-                random.randrange(-10, 11) / 10,
-                random.randrange(-10, 11) / 10,
-            )
-        )
-        if random.randrange(2):
-            a.translate(renderer.vec3.Vec3(20, 0, 0))
-        engine.until(
-            5000,
-            helpers.translate_object(
-                a, renderer.vec3.Vec3(0, 0, random.randrange(18, 36))
-            ),
-        )
-        engine.until(
-            5000,
-            helpers.rotate_object(
-                a,
-                renderer.vec3.Vec3(
-                    random.randrange(360), random.randrange(360), random.randrange(360)
-                ),
-            ),
-        )
-        engine.after(5000, lambda engine: engine.scene_3d.objects.remove(a))
-        engine.after(5000, lambda engine: a.cleanup())
-        engine.scene_3d.add_obj(a)
-        engine.update()
-
-        engine.after(random.randrange(2000, 4000), lambda engine: _asteroids_loop())
+        a = sprites.Asteroid(engine, _asteroid_kill_handler, _asteroid_oldage_handler)
+        a.loop()
+        # enemies.add(a)
+        engine.after(random.randrange(1900, 2800), lambda engine: _asteroids_loop())
 
     _asteroids_loop()
     enemy.loop()

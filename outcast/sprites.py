@@ -7,6 +7,7 @@ from .settings import (
     BULLET_DMG,
     SHIP_MOVE_SPEED,
     PIXEL_SIZE,
+    ASTEROID_HTK,
 )
 from . import helpers
 from . import loader
@@ -65,9 +66,12 @@ class Enemy:
                     random.randrange(360),
                 ),
             ),
+            use_offset=False,
         )
         self.engine.until(
-            1500, helpers.translate_object(self.object, renderer.vec3.Vec3(0, 5, -10))
+            1500,
+            helpers.translate_object(self.object, renderer.vec3.Vec3(0, 5, -10)),
+            use_offset=False,
         )
         self.engine.after(
             1500, lambda engine: engine.scene_3d.objects.remove(self.object)
@@ -76,7 +80,7 @@ class Enemy:
     def get_health_percentage(self, *_):
         if not self.alive:
             return 0
-        return max(0,100 * self.hp / self.maxhp)
+        return max(0, 100 * self.hp / self.maxhp)
 
     def move_health_bar(self, *_):
         hbpos = (
@@ -87,6 +91,7 @@ class Enemy:
         self.health_bar.rect = self.health_bar.rect.move_to(x=hbpos.x, y=hbpos.y)
 
     def loop(self, *_):
+        self.engine.reset_wait_time()
         if not self.alive:
             return
         self.engine.until(
@@ -105,8 +110,9 @@ class Enemy:
                 clamp_front=10,
                 clamp_back=20,
             ),
+            use_offset=False,
         )
-        self.engine.until(300, self.move_health_bar)
+        self.engine.until(300, self.move_health_bar, use_offset=False)
         self.engine.after(300, self.loop)
 
     def hit(self, damage):
@@ -115,18 +121,82 @@ class Enemy:
             self.kill_event(self)
 
 
+class Asteroid:
+    def __init__(self, engine, kill_event, old_age_event):
+        self.engine = engine
+        self.hp = ASTEROID_HTK * BULLET_DMG
+        self.object = loader.MODELS["rock"].clone(True)
+        self.kill_event = kill_event
+        self.old_age_event = old_age_event
+        self.alive = True
+        self.object.translate(
+            renderer.vec3.Vec3(
+                random.randrange(-10, 11) / 10,
+                random.randrange(-10, 11) / 10,
+                random.randrange(-10, 11) / 10,
+            )
+        )
+        if random.randrange(2):
+            self.object.translate(renderer.vec3.Vec3(20, 0, 0))
+
+    def hit(self, damage):
+        self.hp -= damage
+        if self.hp <= 0:
+            self.kill_event(self)
+
+    def kill(self, *_):
+        self.alive = False
+        self.engine.until(
+            1500,
+            helpers.translate_object(self.object, renderer.vec3.Vec3(0, 0, -10)),
+            use_offset=False,
+        )
+        # rotation is already done so
+        self.engine.after(1500, self.die_of_old_age)
+
+    def die_of_old_age(self, *_):
+        if self.object in self.engine.scene_3d.objects:
+            self.engine.scene_3d.objects.remove(self.object)
+            self.object.cleanup()
+        if self.alive:
+            self.alive = False
+            self.old_age_event(self)
+
+    def loop(self):
+        self.engine.until(
+            5000,
+            helpers.translate_object(
+                self.object, renderer.vec3.Vec3(0, 0, random.randrange(18, 36))
+            ),
+            use_offset=False,
+        )
+        self.engine.until(
+            5000,
+            helpers.rotate_object(
+                self.object,
+                renderer.vec3.Vec3(
+                    random.randrange(360), random.randrange(360), random.randrange(360)
+                ),
+            ),
+            use_offset=False,
+        )
+        self.engine.after(5000, self.die_of_old_age)
+        self.engine.scene_3d.add_obj(self.object)
+        self.engine.update()
+
+
 class Bullet:
-    def __init__(self, scene, origin, direction, engine, target):
+    def __init__(self, scene, origin, direction, engine, targets):
         self.position = origin
-        self.target = target
+        self.targets = targets
         self.direction = direction.normalized()
         self.direction.z = -self.direction.z
         self.direction.y = (self.direction.y + 0.5) * 2
         self.direction.x = self.direction.x * 1.5
         # self.direction=renderer.vec3.Vec3(0,0,1)
-        print(self.direction)
+        # print(self.direction)
         self.scene = scene
-        self.object = loader.MODELS["bullet"].clone()
+        self.object = loader.MODELS["bullet"].clone(True)
         self.object.translate(self.position - self.object.calculate_centerpoint())
         self.scene.add_obj(self.object)
         self.engine = engine
@@ -137,14 +207,16 @@ class Bullet:
             return
         self.position += self.direction * BULLET_SPEED * engine.delta
         self.object.translate(self.direction * BULLET_SPEED * engine.delta)
-        if self.target.alive and self.target.object.bbox.collides_with(self.position):
-            self.target.hit(BULLET_DMG)
-            self.destroy(self.engine)
+        for target in self.targets:  # O(n)
+            if target.alive and target.object.bbox.collides_with(self.position):
+                target.hit(BULLET_DMG)
+                self.destroy(self.engine)  # only hit once? idk it doesnt matter
+                break
         engine.update()
 
     def fire(self):
         self.engine.update()
-        self.engine.until(BULLET_LIFETIME, self._tick)
+        self.engine.until(BULLET_LIFETIME, self._tick, use_offset=False)
         self.engine.after(BULLET_LIFETIME, self.destroy)
 
     def destroy(self, engine):

@@ -61,8 +61,10 @@ class Engine:
 
     def update(self):
         self._update_flag = True
-    def every(self, n, epsilon = .05):
-        return self._elapsed%n<epsilon
+
+    def every(self, n, epsilon=0.05):
+        return self._elapsed % n < epsilon
+
     def add_event_handler(self, event, handler):
         if event not in self._event_handlers:
             self._event_handlers[event] = set()
@@ -123,11 +125,12 @@ class Engine:
                 self.frame_counter += 1
                 # current_frame_start = pygame.time.get_ticks()
                 self.delta = self.clock.tick(self.fps) / 1000
-                self._elapsed+=self.delta
+                self._elapsed += self.delta
                 # self.delta = (current_frame_start - previous_frame_start)/1000
                 # previous_frame_start = current_frame_start
                 self.uimgr.update(self.delta)
                 self.screen.fill((0, 0, 0))
+                print(self._afters)
                 self._handle_events()
                 self._handle_afters()
                 self._handle_untils()
