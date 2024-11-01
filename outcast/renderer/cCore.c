@@ -39,16 +39,23 @@
 #endif
 #define EPSILON 0.00000001
 #define VIEWPORT_DEPTH 255
+/* COMPILER-DEPENDENT STUFF */
+#ifndef INFINITY
+#warn "INFINITY not defined"
+#define INFINITY 1.7e308
+#endif
 /* PYPY STUFF */
 #ifndef Py_T_PYSSIZET
+#warn "Py_T_PYSSIZET not defined, expect problems"
 #define Py_T_PYSSIZET 19
 #endif
 #ifndef Py_T_DOUBLE
+#warn "Py_T_DOUBLE not defined, expect problems"
 #define Py_T_DOUBLE 4
 #endif
 /* FORWARD */
 
-static PyTypeObject Vec3Type, MatrixType, TextureType;
+static PyTypeObject Vec3Type, MatrixType, TextureType, BoxType;
 static PyModuleDef ccoremodule;
 
 typedef struct {
@@ -1214,18 +1221,26 @@ static int Box_init(BoxObject *self, PyObject *args, PyObject *kwds) {
   return 0;
 }
 static void Box_dealloc(BoxObject *self) {
-  if (self->min != NULL) {
+  /*if (self->min != NULL) {
     Py_XDECREF(self->min);
   }
   if (self->max != NULL) {
     Py_XDECREF(self->max);
-  }
+  }*/
 }
 
 static bool Box_collides_with_vec3_obj(BoxObject *self, Vec3Object *other) {
   return ((other->x >= self->min->x && other->x <= self->max->x) &&
           (other->y >= self->min->y && other->y <= self->max->y) &&
           (other->z >= self->min->z && other->z <= self->max->z));
+}
+static void Box_update_obj(BoxObject *self, Vec3Object *new) {
+  self->min->x = fmin(self->min->x, new->x);
+  self->max->x = fmax(self->max->x, new->x);
+  self->min->y = fmin(self->min->y, new->y);
+  self->max->y = fmax(self->max->y, new->y);
+  self->min->z = fmin(self->min->z, new->z);
+  self->max->z = fmax(self->max->z, new->z);
 }
 static PyObject *Box_collides_with(PyObject *self, PyObject *other) {
   if (PyObject_TypeCheck(other, &Vec3Type)) {
@@ -1234,6 +1249,27 @@ static PyObject *Box_collides_with(PyObject *self, PyObject *other) {
   }
   PyErr_SetString(PyExc_TypeError, "expected a Box or Vec3 arg");
   return NULL;
+}
+static PyObject *Box_update(PyObject *self, PyObject *new) {
+  if (!PyObject_TypeCheck(new, &Vec3Type)) {
+    PyErr_SetString(PyExc_TypeError, "expected a Vec3 arg");
+  }
+  Box_update_obj((BoxObject*)self, (Vec3Object *)new);
+  Py_INCREF(new);
+  return new;
+}
+static PyObject *Box_reset(PyObject *self, PyObject *NOARGS) {
+  BoxObject *self_ = (BoxObject *)self;
+  self_->min->x = self_->min->y = self_->min->z = INFINITY;
+  self_->max->x = self_->max->y = self_->max->z = -INFINITY;
+  return Py_None;
+}
+static PyObject *Box_empty(PyObject *cls, PyObject *NOARGS){
+  BoxObject *box = (BoxObject*)(&BoxType)->tp_alloc(&BoxType, 0);
+  box->min = cCore_mk_vec3_obj(INFINITY, INFINITY, INFINITY);
+  box->max = cCore_mk_vec3_obj(-INFINITY, -INFINITY, -INFINITY);
+  Py_INCREF(box);
+  return (PyObject*)box;
 }
 static PyMemberDef Box_members[] = {
     {"min", Py_T_OBJECT_EX, offsetof(BoxObject, min), 0,
@@ -1244,6 +1280,9 @@ static PyMemberDef Box_members[] = {
 };
 static PyMethodDef Box_methods[] = {
     {"collides_with", Box_collides_with, METH_O, "Collision check"},
+    {"update", Box_update, METH_O, "Updates the box with a new vertex"},
+    {"reset", Box_reset, METH_NOARGS, "Resets the box to empty"},
+    {"empty", Box_empty, METH_CLASS|METH_NOARGS, "Creates a new empty box"},
     {NULL, NULL, 0, NULL},
 };
 static PyTypeObject BoxType = {

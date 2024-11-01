@@ -164,6 +164,8 @@ def _segment_main_game_intro(engine):
 
 @add_segment("main_game")
 def _segment_main_game(engine):
+    def kill_handler(ship):
+        raise NotImplementedError
     engine.reset_wait_time()
     enemy_ship = loader.MODELS["enemy_ship"]
     asteroid = loader.MODELS["rock"]
@@ -177,6 +179,8 @@ def _segment_main_game(engine):
     ), "main_game segment run before main_game_intro"
     gbcp = gun_barrel.calculate_centerpoint()
     # engine.scene_3d.objects.remove(enemy_ship)
+    
+    enemy = sprites.Enemy(ENEMY_HP, enemy_ship, engine, kill_handler)
     crosshair = sprites.Crosshair(engine.screen, engine.scene_clamp)
     engine.sprite_group.add(crosshair)
 
@@ -195,27 +199,9 @@ def _segment_main_game(engine):
             engine.until(
                 100, helpers.rotate_object(gun_barrel, renderer.vec3.Vec3(0, 0, 360))
             )
-            sprites.Bullet(engine.scene_3d, gbcp, position - gbcp, engine).fire()
-
-    def _ship_loop_move(ship):
-        engine.until(
-            300,
-            helpers.translate_object(
-                ship,
-                renderer.vec3.Vec3(
-                    random.randrange(-10, 11) / 10,
-                    random.randrange(-10, 11) / 10,
-                    random.randrange(-10, 11) / 10,
-                ),
-                clamp_top=0,
-                clamp_bottom=8,
-                clamp_left=-5,
-                clamp_right=1,
-                clamp_front=10,
-                clamp_back=20,
-            ),
-        )
-        engine.after(300, lambda engine: _ship_loop_move(ship))
+            sprites.Bullet(
+                engine.scene_3d, gbcp, position - gbcp, engine, enemy
+            ).fire()
 
     def _asteroids_loop():
         a = asteroid.clone()
@@ -251,7 +237,7 @@ def _segment_main_game(engine):
         engine.after(random.randrange(2000, 4000), lambda engine: _asteroids_loop())
 
     _asteroids_loop()
-    _ship_loop_move(enemy_ship)
+    enemy.loop()
     engine.add_event_handler(FRAME, _frame_handler)
     engine.add_event_handler(pygame.MOUSEMOTION, crosshair.mousemotion_handler)
 

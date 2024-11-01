@@ -39,6 +39,9 @@ class ObjFile:
         self._imw, self._imh = (None, None)
         for slot, file in textures.items():
             self.add_texture(slot, file)
+        self.bbox = cCore.Box.empty()
+        for vertex in self.vertices:
+            self.bbox.update(vertex)
 
     def look_at(self, eye, center, up):
         self.cam_z = eye.z
@@ -101,8 +104,10 @@ class ObjFile:
 
     def translate(self, delta):
         self.translation += delta
+        self.bbox.reset()
         *self.vertices, self.centerpoint = [
-            vert + delta for vert in (*self.vertices, self.centerpoint)
+            self.bbox.update(vert + delta)
+            for vert in (*self.vertices, self.centerpoint)
         ]
 
     def set_defaults(self, **dfs):
@@ -134,8 +139,11 @@ class ObjFile:
         )
 
     def apply(self, transform):
+        self.bbox.reset()
         *self.vertices, self.centerpoint = [
-            vec3.Vec3.from_matrix3(transform @ vec3.Matrix.from_vector(vert))
+            self.bbox.update(
+                vec3.Vec3.from_matrix3(transform @ vec3.Matrix.from_vector(vert))
+            )
             for vert in (*self.vertices, self.centerpoint)
         ]
         self.vertex_normals = [
@@ -147,18 +155,6 @@ class ObjFile:
         self.rotate(-self.rotation, degrees=False)
         self.translate(-self.translation)
         self.light_dir = LIGHT_DIR
-
-    def get_bounding_box(self):
-        minx, miny, minz = (math.inf for _ in range(3))
-        maxx, maxy, maxz = (-math.inf for _ in range(3))
-        for vertex in self.vertices:
-            minx = min(minx, vertex.x)
-            miny = min(miny, vertex.y)
-            minz = min(minz, vertex.z)
-            maxx = max(maxx, vertex.x)
-            maxy = max(maxy, vertex.y)
-            maxz = max(maxz, vertex.z)
-        return cCore.Box(cCore.Vec3(minx, miny, minz), cCore.Vec3(maxx, maxy, maxz))
 
     def render(
         self,

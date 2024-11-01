@@ -1,7 +1,7 @@
 - WINDOWS:
 > If the provided PREPARE.bat script doesn't work, you can try compiling the library yourself.
 > You can use any standard c compiler.
-> run <compiler> castaway/renderer/cCore.c -shared -fPIC -O0 -o cast_away/renderer/cCore.pyd
+> run <compiler> outcast/renderer/cCore.c -shared -fPIC -O0 -o outcast/renderer/cCore.pyd
 > If that doesn't work either you can try fiddling around with setup.py and running python setup.py build_ext -i
 
 - LINUX:

@@ -1,1 +1,1 @@
-python -m cast_away
+python -m outcast
