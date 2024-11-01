@@ -186,9 +186,10 @@ class Asteroid:
 
 
 class Bullet:
-    def __init__(self, scene, origin, direction, engine, targets):
+    def __init__(self, scene, origin, direction, engine, targets, score_counter):
         self.position = origin
         self.targets = targets
+        self.score_counter = score_counter
         self.direction = direction.normalized()
         self.direction.z = -self.direction.z
         self.direction.y = (self.direction.y + 0.5) * 2
@@ -210,6 +211,11 @@ class Bullet:
         for target in self.targets:  # O(n)
             if target.alive and target.object.bbox.collides_with(self.position):
                 target.hit(BULLET_DMG)
+                qpos = (
+                    self.object._projection_x_viewport @ self.position
+                ) * PIXEL_SIZE + renderer.vec3.Vec3(*engine.scene_offset, 0)
+
+                self.score_counter.update_score(1, (qpos.x, qpos.y))
                 self.destroy(self.engine)  # only hit once? idk it doesnt matter
                 break
         engine.update()

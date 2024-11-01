@@ -7,6 +7,7 @@ from . import renderer
 from . import loader
 from . import helpers
 from . import sprites
+from . import scorecounter
 from .engine import FRAME
 from .mixer import MUSIC_CHANNEL, SFX_CHANNEL
 
@@ -194,6 +195,15 @@ def _segment_main_game(engine):
         engine.after(1500, mkenemy)
 
     def _ship_kill_handler(ship):
+        score_counter.update_score(
+            200,
+            tuple(
+                (enemy_ship._projection_x_viewport @ enemy_ship.centerpoint)
+                * PIXEL_SIZE
+                + renderer.vec3.Vec3(*engine.scene_offset, 0)
+            )[:2],
+            "@pixelated_bigger_emph",
+        )
         ship.kill()
         enemies.remove(ship)
         engine.after(2000, spawn_new_ship)
@@ -210,6 +220,8 @@ def _segment_main_game(engine):
         # TODO optimize bullets to actually make shooting asteroids possible
         pass
 
+    score_counter = scorecounter.ScoreCounter(engine)
+    time_counter = scorecounter.TimeCounter(engine)
     engine.reset_wait_time()
     enemy_ship = loader.MODELS["enemy_ship"]
     asteroid = loader.MODELS["rock"]
@@ -245,7 +257,7 @@ def _segment_main_game(engine):
                 100, helpers.rotate_object(gun_barrel, renderer.vec3.Vec3(0, 0, 360))
             )
             sprites.Bullet(
-                engine.scene_3d, gbcp, position - gbcp, engine, enemies
+                engine.scene_3d, gbcp, position - gbcp, engine, enemies, score_counter
             ).fire()
 
     def _asteroids_loop():

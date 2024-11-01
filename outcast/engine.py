@@ -5,6 +5,8 @@ from . import loader
 from .fonts import HELVETICA_XSMALL
 
 FRAME = 0xF000
+TIMER = 0xF001
+TIMEOUT = 0xF002
 
 
 class AfterSequence:
@@ -46,6 +48,7 @@ class Engine:
             theme_path=loader.FILES / "theme/theme.json",
         )
         self.sprite_group = pygame.sprite.Group()
+        pygame.time.set_timer(TIMER, 1000)
 
     def wait(self, ms):
         self.total_time_offset += ms
@@ -80,6 +83,9 @@ class Engine:
                     eh(event)
             if event.type == pygame.QUIT:
                 self.quit()
+            if event.type == TIMEOUT:
+                self.quit()
+                #TODO
             if pygame.USEREVENT <= event.type <= pygame.NUMEVENTS:
                 for uih in list(self._uihandlers.values()):
                     uih(event)

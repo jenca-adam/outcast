@@ -1,4 +1,14 @@
 {
+   "#score_label_big" : {
+      "font" : {
+         "name" : "PublicPixel",
+         "regular_resource" : {
+            "package" : "files.fonts",
+            "resource" : "PublicPixel.ttf"
+         },
+         "size" : 36
+      }
+   },
    "#select_label" : {
       "font" : {
          "name" : "PublicPixel",
@@ -18,6 +28,29 @@
          }
       }
    },
+   "@pixelated_big" : {
+      "font" : {
+         "name" : "PublicPixel",
+         "regular_resource" : {
+            "package" : "files.fonts",
+            "resource" : "PublicPixel.ttf"
+         },
+         "size" : 30
+      }
+   },
+   "@pixelated_bigger_emph" : {
+      "colours" : {
+         "normal_text" : "yellow"
+      },
+      "font" : {
+         "name" : "PublicPixel",
+         "regular_resource" : {
+            "package" : "files.fonts",
+            "resource" : "PublicPixel.ttf"
+         },
+         "size" : 40
+      }
+   },
    "button" : {
       "colours" : {
          "active_bg" : "#aaaa66",
@@ -33,7 +66,10 @@
       "font" : {
          "size" : 26
       }
+   },
+   "defaults" : {
+      "colours" : {
+         "normal_text" : "white"
+      }
    }
 }
-
-

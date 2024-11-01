@@ -1,5 +1,5 @@
 FONT_SIZES = [10, 16, 20, 36, 48, 64, 96]
-PIXEL_SIZE = 10
+PIXEL_SIZE = 5
 TARGET_FPS = 30
 BACKFACE_CULLING = True
 MIXER_WAIT_TIME = 1
@@ -18,10 +18,16 @@ DIFFICULTIES = {
     "#kepler": {
         "music": "metal.mp3",
         "background": "outer-space.png",
+        "timeout": 45,
     },
     "#gliese": {
         "music": "ghost.mp3",
         "background": "outer-space1.png",
+        "timeout": 55,
     },
-    "#proxima": {"music": "circle_pit.mp3", "background": "outer-space2.png"},
+    "#proxima": {
+        "music": "circle_pit.mp3",
+        "background": "outer-space2.png",
+        "timeout": 65,
+    },
 }
