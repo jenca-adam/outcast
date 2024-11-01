@@ -1,6 +1,7 @@
 import pygame
 import pygame_gui
 import random
+import sys
 from pygame_gui.core import ObjectID
 from .settings import *
 from . import renderer
@@ -8,7 +9,7 @@ from . import loader
 from . import helpers
 from . import sprites
 from . import scorecounter
-from .engine import FRAME
+from .engine import FRAME, TIMEOUT
 from .mixer import MUSIC_CHANNEL, SFX_CHANNEL
 
 SEGMENTS = {}
@@ -195,6 +196,7 @@ def _segment_main_game(engine):
         engine.after(1500, mkenemy)
 
     def _ship_kill_handler(ship):
+        engine["ships_destroyed"]+=1
         score_counter.update_score(
             200,
             tuple(
@@ -220,6 +222,28 @@ def _segment_main_game(engine):
         # TODO optimize bullets to actually make shooting asteroids possible
         pass
 
+    def _timeout_handler(event):
+        for obj in list(
+            engine.scene_3d.objects
+        ):  # SeT SiZe ChAnGeD dUrInG iTeRaTiOn hbu kys
+            # no time to do an outro
+            engine.scene_3d.objects.remove(obj)
+        for enemy in list(enemies):  # ditto
+            enemy.despawn()
+            enemies.remove(enemy)
+        for obj in ("enemy_ship","rock"):  
+            loader.MODELS[obj] = loader.apply_oi_transforms(
+                obj, loader.MODELS[obj].clone()
+            )  # reset_transform
+        engine.clear_timers()
+        engine.clear_event_handlers()
+        engine.clear_2d_sprites()
+        time_counter.kill()
+        score_counter.kill()
+        MUSIC_CHANNEL.get_sound().fadeout(100)
+        SFX_CHANNEL.get_sound().fadeout(100)
+        play_segment("final_screen", engine)
+
     score_counter = scorecounter.ScoreCounter(engine)
     time_counter = scorecounter.TimeCounter(engine)
     engine.reset_wait_time()
@@ -228,6 +252,9 @@ def _segment_main_game(engine):
     bullet = loader.MODELS["bullet"]
     gun_barrel = loader.MODELS["gun_barrel"]
     gunshot = loader.SOUNDS["gunshot.mp3"]
+    engine["bullets_fired"]=0
+    engine["bullets_hit"]=0
+    engine["ships_destroyed"]=0
     loader.SOUNDS["police-siren.mp3"].fadeout(5000)
     asteroid.translate(renderer.vec3.Vec3(-10, 0, 0))
     assert (
@@ -259,6 +286,7 @@ def _segment_main_game(engine):
             sprites.Bullet(
                 engine.scene_3d, gbcp, position - gbcp, engine, enemies, score_counter
             ).fire()
+            engine["bullets_fired"]+=1
 
     def _asteroids_loop():
         a = sprites.Asteroid(engine, _asteroid_kill_handler, _asteroid_oldage_handler)
@@ -270,6 +298,119 @@ def _segment_main_game(engine):
     enemy.loop()
     engine.add_event_handler(FRAME, _frame_handler)
     engine.add_event_handler(pygame.MOUSEMOTION, crosshair.mousemotion_handler)
+    engine.add_event_handler(TIMEOUT, _timeout_handler)
+
+
+@add_segment("final_screen")
+def _segment_final_screen(engine):
+    def button_handler(event):
+        if event.type == pygame_gui.UI_BUTTON_PRESSED:
+            print(event.ui_object_id)
+            if event.ui_object_id.endswith("#bquit"):
+                pygame.quit()
+                sys.exit(0)
+            if event.ui_object_id.endswith("#bretry"):
+                MUSIC_CHANNEL.get_sound().fadeout(1000)
+                u_won_panel.kill()
+                engine.remove_ui_event_handler("handle_final_butt")
+                play_segment("destination_select", engine)
+
+    """engine["score"] = 69
+    engine["bullets_fired"] = 420
+    engine["bullets_hit"] = 69
+    engine["ships_destroyed"] = 0
+    engine["target"] = "#proxima"""
+    engine._background = None
+    engine.update()
+    MUSIC_CHANNEL.play(loader.SOUNDS["theme_violin.mp3"])
+    u_won_panel = pygame_gui.elements.UIPanel(
+        pygame.rect.Rect(0, 0, 600, 450),
+        anchors={
+            "left": "left",
+            "right": "right",
+            "top": "top",
+            "bottom": "bottom",
+            "center": "center",
+        },
+    )
+    game_over = pygame_gui.elements.UILabel(
+        pygame.rect.Rect(0, 20, -1, -1),
+        anchors={"top": "top", "centerx": "centerx"},
+        text="Game Over!",
+        object_id=ObjectID(object_id="#select_label", class_id="@pixelated"),
+        container=u_won_panel,
+    )
+    stats_score = pygame_gui.elements.UILabel(
+        pygame.rect.Rect(50, 100, -1, -1),
+        anchors={"top": "top", "left": "left"},
+        text=f"SCORE: {engine['score']}",
+        object_id=ObjectID(class_id="@pixelated"),
+        container=u_won_panel,
+    )
+    stats_bull = pygame_gui.elements.UILabel(
+        pygame.rect.Rect(50, 130, -1, -1),
+        anchors={"top": "top", "left": "left"},
+        text=f"BULLETS FIRED: {engine['bullets_fired']}",
+        object_id=ObjectID(class_id="@pixelated"),
+        container=u_won_panel,
+    )
+    stats_hit = pygame_gui.elements.UILabel(
+        pygame.rect.Rect(50, 160, -1, -1),
+        anchors={"top": "top", "left": "left"},
+        text=f"BULLETS THAT HIT: {engine['bullets_hit']}",
+        object_id=ObjectID(class_id="@pixelated"),
+        container=u_won_panel,
+    )
+    stats_acc = pygame_gui.elements.UILabel(
+        pygame.rect.Rect(50, 190, -1, -1),
+        anchors={"top": "top", "left": "left"},
+        text=f"ACCURACY: {(round(100*engine['bullets_hit']/engine['bullets_fired'],2) if engine['bullets_fired'] else 'LAZY')}%",
+        object_id=ObjectID(class_id="@pixelated"),
+        container=u_won_panel,
+    )
+    stats_des = pygame_gui.elements.UILabel(
+        pygame.rect.Rect(50, 220, -1, -1),
+        anchors={"top": "top", "left": "left"},
+        text=f"ENEMIES DESTROYED: {engine['ships_destroyed']}",
+        object_id=ObjectID(class_id="@pixelated"),
+        container=u_won_panel,
+    )
+    stats_des = pygame_gui.elements.UILabel(
+        pygame.rect.Rect(50, 250, -1, -1),
+        anchors={"top": "top", "left": "left"},
+        text=f"SECONDS WASTED: {DIFFICULTIES[engine['target']]['timeout']}",
+        object_id=ObjectID(class_id="@pixelated"),
+        container=u_won_panel,
+    )
+    get_a_life = pygame_gui.elements.UILabel(
+        pygame.rect.Rect(0, 310, -1, -1),
+        anchors={"top": "top", "centerx": "centerx"},
+        text=random.choice(loader.TEXTS["final_messages.txt"]),
+        object_id=ObjectID(class_id="@pixelated", object_id="#finmsg"),
+        container=u_won_panel,
+    )
+    butt_retry = pygame_gui.elements.UIButton(
+        pygame.rect.Rect(120, 380, 100, 50),
+        anchors={"top": "top", "left": "left"},
+        text="Retry",
+        object_id=ObjectID(class_id="@pixelated", object_id="#bretry"),
+        container=u_won_panel,
+    )
+    butt_home = pygame_gui.elements.UIButton(
+        pygame.rect.Rect(20, 380, 100, 50),
+        anchors={"top": "top", "left_target": butt_retry},
+        text="Home",
+        object_id=ObjectID(class_id="@pixelated", object_id="#bhome"),
+        container=u_won_panel,
+    )
+    butt_quit = pygame_gui.elements.UIButton(
+        pygame.rect.Rect(20, 380, 100, 50),
+        anchors={"top": "top", "left_target": butt_home},
+        text="Quit",
+        object_id=ObjectID(class_id="@pixelated", object_id="#bquit"),
+        container=u_won_panel,
+    )
+    engine.add_ui_event_handler(button_handler, "handle_final_butt")
 
 
 def play_segment(segment_name, engine):

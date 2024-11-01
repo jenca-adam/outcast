@@ -73,6 +73,13 @@ class Engine:
             self._event_handlers[event] = set()
         self._event_handlers[event].add(handler)
 
+    def clear_timers(self):
+        self._afters = []
+        self._untils = []
+
+    def clear_2d_sprites(self):
+        self.sprite_group = pygame.sprite.Group()
+
     def _handle_events(self):
         for key in self._key_handlers:
             if pygame.key.get_pressed()[key]:
@@ -83,9 +90,6 @@ class Engine:
                     eh(event)
             if event.type == pygame.QUIT:
                 self.quit()
-            if event.type == TIMEOUT:
-                self.quit()
-                #TODO
             if pygame.USEREVENT <= event.type <= pygame.NUMEVENTS:
                 for uih in list(self._uihandlers.values()):
                     uih(event)
@@ -105,6 +109,9 @@ class Engine:
 
     def remove_ui_event_handler(self, handler_id):
         del self._uihandlers[handler_id]
+
+    def clear_event_handlers(self):
+        self._event_handlers = {}
 
     def _handle_afters(self):
         for i, (timeout, timer) in enumerate(self._afters):

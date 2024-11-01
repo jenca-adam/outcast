@@ -18,7 +18,7 @@ DIFFICULTIES = {
     "#kepler": {
         "music": "metal.mp3",
         "background": "outer-space.png",
-        "timeout": 45,
+        "timeout": 1,
     },
     "#gliese": {
         "music": "ghost.mp3",

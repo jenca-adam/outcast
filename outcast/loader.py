@@ -14,17 +14,18 @@ MODELS = {}
 SOUNDS = {}
 FONTS = {}
 IMAGES = {}
+TEXTS = {}
 FILES = pathlib.Path(os.path.dirname(__file__)) / "../files"
+with open(FILES / "objects_info.json", "r") as f:
+    OBJ_INFO = json.load(f)
 
 
 def load_obj(obj_name):
-    with open(FILES / "objects_info.json", "r") as f:
-        obj_info = json.load(f)
     objdir = FILES / "obj" / obj_name
     objfile = objdir / f"{obj_name}.obj"
     if not os.path.exists(objfile):
         raise FileNotFoundError(f"model not found: {obj_name}")
-    scale = obj_info.get(obj_name, {}).get("scale", 1)
+    scale = OBJ_INFO.get(obj_name, {}).get("scale", 1)
     obj = ObjFile.open(objfile, scale=scale)
     for texture in ("diffuse", "nm_tangent", "spec"):
         texture_fn = objdir / f"{obj_name}_{texture}.ppm"
@@ -34,18 +35,22 @@ def load_obj(obj_name):
                 raise LookupError(f"missing diffuse texture for {obj_name}")
             continue
         obj.add_texture(texture, str(texture_fn))
-    rotation = obj_info.get(obj_name, {}).get("rotate", None)
+    return apply_oi_transforms(obj_name, obj)
+
+
+def apply_oi_transforms(obj_name, obj):
+    rotation = OBJ_INFO.get(obj_name, {}).get("rotate", None)
     if rotation is not None:
         obj.rotate(Vec3(*rotation))
-    translation = obj_info.get(obj_name, {}).get("translate", None)
+    translation = OBJ_INFO.get(obj_name, {}).get("translate", None)
     if translation is not None:
         obj.translate(Vec3(*translation))
     return obj
 
 
 def load_all(screen):
-    objs, audios, fonts, images = map(
-        os.listdir, map(FILES.__truediv__, ("obj", "audio", "fonts", "images"))
+    objs, audios, fonts, images, txts = map(
+        os.listdir, map(FILES.__truediv__, ("obj", "audio", "fonts", "images", "text"))
     )
     pbar = ProgressBar(
         screen,
@@ -63,3 +68,6 @@ def load_all(screen):
         )
     for image_name in pbar.partial_iter(images):
         IMAGES[image_name] = pygame.image.load(FILES / "images" / image_name)
+    for text_name in pbar.partial_iter(txts):
+        with open(FILES / "text" / text_name, "r") as f:
+            TEXTS[text_name] = f.readlines()

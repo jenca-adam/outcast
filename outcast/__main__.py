@@ -33,7 +33,9 @@ def main():
         segment.play_segment(INITIAL_SEGMENT_NAME, outcast)
         # segment.play_segment("main_game_intro", outcast)
         outcast.loop()
-    except:
+    except Exception as e:
+        if isinstance(e, SystemExit) or isinstance(e, KeyboardInterrupt):
+            return
         pygame.mixer.quit()
         pygame.display.quit()
         show_error(traceback.format_exc())

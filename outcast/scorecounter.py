@@ -43,6 +43,9 @@ class ScoreCounter:
             self.show_score_on_screen(f"+{sd}", position, clsid)
         self.label.set_text(f"SCORE: {self.score}")
 
+    def kill(self):
+        self.label.kill()
+
 
 class TimeCounter:
     def __init__(self, engine):
@@ -63,7 +66,10 @@ class TimeCounter:
     def update(self, *_):
 
         self.time += 1
-        if self.time==self.timeout:
+        if self.time == self.timeout:
             pygame.event.post(pygame.event.Event(TIMEOUT))
         self.engine["time"] = self.time
         self.label.set_text(f"TIME: {self.time}")
+
+    def kill(self):
+        self.label.kill()

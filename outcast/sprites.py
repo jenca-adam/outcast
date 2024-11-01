@@ -73,9 +73,12 @@ class Enemy:
             helpers.translate_object(self.object, renderer.vec3.Vec3(0, 5, -10)),
             use_offset=False,
         )
-        self.engine.after(
-            1500, lambda engine: engine.scene_3d.objects.remove(self.object)
-        )
+        self.engine.after(1500, self.despawn)
+
+    def despawn(self):
+        self.health_bar.kill()
+        if self.object in self.engine.scene_3d.objects:
+            self.engine.scene_3d.objects.remove(self.object)
 
     def get_health_percentage(self, *_):
         if not self.alive:
@@ -184,6 +187,9 @@ class Asteroid:
         self.engine.scene_3d.add_obj(self.object)
         self.engine.update()
 
+    def despawn(self):
+        self.die_of_old_age()
+
 
 class Bullet:
     def __init__(self, scene, origin, direction, engine, targets, score_counter):
@@ -210,24 +216,25 @@ class Bullet:
         self.object.translate(self.direction * BULLET_SPEED * engine.delta)
         for target in self.targets:  # O(n)
             if target.alive and target.object.bbox.collides_with(self.position):
+                self.engine["bullets_hit"]+=1
                 target.hit(BULLET_DMG)
                 qpos = (
                     self.object._projection_x_viewport @ self.position
                 ) * PIXEL_SIZE + renderer.vec3.Vec3(*engine.scene_offset, 0)
 
                 self.score_counter.update_score(1, (qpos.x, qpos.y))
-                self.destroy(self.engine)  # only hit once? idk it doesnt matter
+                self.despawn(self.engine)  # only hit once? idk it doesnt matter
                 break
         engine.update()
 
     def fire(self):
         self.engine.update()
         self.engine.until(BULLET_LIFETIME, self._tick, use_offset=False)
-        self.engine.after(BULLET_LIFETIME, self.destroy)
+        self.engine.after(BULLET_LIFETIME, self.despawn)
 
-    def destroy(self, engine):
+    def despawn(self, *engine):
         if not self.alive:
             return
         self.alive = False
         self.scene.objects.remove(self.object)
-        engine.update()
+        self.engine.update()

@@ -67,6 +67,15 @@
          "size" : 26
       }
    },
+   "#finmsg" :{
+      "colours": {
+      	"normal_text": "yellow"
+      },
+      "font" :{
+      	"name":"PublicPixel",
+	"size": 18
+      }
+   },
    "defaults" : {
       "colours" : {
          "normal_text" : "white"
