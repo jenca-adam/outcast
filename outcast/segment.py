@@ -434,6 +434,7 @@ def _segment_main_menu(engine):
                 title.kill()
                 butt_play.kill()
                 butt_quit.kill()
+                butt_credits.kill()
                 engine.scene_3d.objects.remove(asship)
                 engine.clear_timers()
                 engine.update()

@@ -1,4 +1,3 @@
-import tqdm
 import sys
 import math
 
@@ -27,7 +26,7 @@ def read_image(ppm_file):
         w, h = map(int, f.readline().strip().split())
         maxn = int(f.readline().strip())
         nbytes = int(math.log(maxn + 1, 256))
-        for pix in tqdm.tqdm(range(w * h)):
+        for pix in range(w * h):
             if nbytes == 1:
                 line.append(tuple(f.read(3)))
             else:
@@ -47,11 +46,3 @@ def write_color(r, g, b):
     sys.stdout.buffer.write(bytes((r, g, b)))
 
 
-def test(size):
-    data = []
-    for i in tqdm.tqdm(range(size)):
-        row = []
-        for j in range(size):
-            row.append((int((i / size) * 255), 0, int((j / size) * 255)))
-        data.append(row)
-    open("test.ppm", "wb").write(export_image(data))
