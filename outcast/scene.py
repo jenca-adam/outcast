@@ -6,6 +6,7 @@ from .settings import (
     PHONG_DIFFUSE_COEFF,
     PHONG_AMBIENT_COEFF,
     PHONG_SPECULAR_COEFF,
+    LIGHTING
 )
 
 
@@ -22,6 +23,7 @@ def setup_scene(screen, pixel_size):
         diffuse_coeff=PHONG_DIFFUSE_COEFF,
         specular_coeff=PHONG_SPECULAR_COEFF,
         ambient_coeff=PHONG_AMBIENT_COEFF,
+        lighting=LIGHTING
     )
     scene.set_defaults(cam_z=CAM_Z)
     scene.set_render_image(

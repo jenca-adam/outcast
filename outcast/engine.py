@@ -3,6 +3,7 @@ import time
 import pygame_gui
 from . import loader
 from .fonts import HELVETICA_XSMALL
+import tracemalloc
 
 FRAME = 0xF000
 TIMER = 0xF001
@@ -41,6 +42,7 @@ class Engine:
         self._update_flag = False
         self.delta = 0
         self.data = {}
+        self.snapshots=[]
         self.total_time_offset = 0
         self.clock = pygame.time.Clock()
         self.uimgr = pygame_gui.UIManager(
@@ -89,6 +91,8 @@ class Engine:
                 for eh in self._event_handlers[event.type]:
                     eh(event)
             if event.type == pygame.QUIT:
+                #snapshot=tracemalloc.take_snapshot()
+                #breakpoint()
                 self.quit()
             if pygame.USEREVENT <= event.type <= pygame.NUMEVENTS:
                 for uih in list(self._uihandlers.values()):
@@ -143,7 +147,6 @@ class Engine:
                 # previous_frame_start = current_frame_start
                 self.uimgr.update(self.delta)
                 self.screen.fill((0, 0, 0))
-                print(self._afters)
                 self._handle_events()
                 self._handle_afters()
                 self._handle_untils()

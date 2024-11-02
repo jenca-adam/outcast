@@ -76,6 +76,22 @@
 	"size": 18
       }
    },
+   "@fat":{
+      "colours": {
+      	"normal_text": "yellow"
+      },
+      "font" :{
+      	"name":"AirstrikeACAD",
+	"size": 96,
+	"regular_resource" : {
+            "package" : "files.fonts",
+            "resource" : "airstrikeacad.ttf"
+         }
+
+      }
+
+   
+   },
    "defaults" : {
       "colours" : {
          "normal_text" : "white"

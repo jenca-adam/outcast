@@ -181,6 +181,7 @@ static PyObject *Vec3__mul__(PyObject *self, PyObject *other) {
     return NULL;
   }
   double other_double = PyFloat_AsDouble(other_pyfloat);
+  Py_DECREF(other_pyfloat);
   Vec3Object *self_ = ((Vec3Object *)self);
   return (PyObject *)Vec3__mul__obj_(self_, other_double);
 }
@@ -199,6 +200,7 @@ static PyObject *Vec3__truediv__(PyObject *self, PyObject *other) {
     return NULL;
   }
   double other_double = PyFloat_AsDouble(other_pyfloat);
+  Py_DECREF(other_pyfloat);
   if (other_double == 0) {
     PyErr_SetString(PyExc_ZeroDivisionError, "divide vec3 by 0");
     return NULL;
@@ -214,6 +216,7 @@ static PyObject *Vec3__floordiv__(PyObject *self, PyObject *other) {
     return NULL;
   }
   double other_double = PyFloat_AsDouble(other_pyfloat);
+  Py_DECREF(other_pyfloat);
   if (other_double == 0) {
     PyErr_SetString(PyExc_ZeroDivisionError, "divide vec3 by 0");
     return NULL;
@@ -286,7 +289,7 @@ static PyObject *Vec3_near_zero(PyObject *self, PyObject *_) {
                          (fabs(self_->y) < EPSILON) &&
                          (fabs(self_->z) < EPSILON));
 }
-static PyObject *Vec3_gamma_corrected(PyObject *self, PyObject *_) {
+static PyObject *Vec3_gamma_corrected(PyObject *self, PyObject *NOARGS) {
   Vec3Object *self_ = (Vec3Object *)self;
   Vec3Object *obj = CCORE_NEW_VEC3;
   obj->x = cCore_linear_to_gamma(self_->x);
@@ -301,12 +304,8 @@ static Vec3Object *Vec3_normalized_obj_(Vec3Object *self_) {
   }
   return Vec3__truediv__obj_(self_, length);
 }
-static PyObject *Vec3_normalized(PyObject *self, PyObject *_) {
-  PyObject *length_obj = PyObject_GetAttrString(self, "length");
-  if (PyFloat_AsDouble(length_obj) == 0) {
-    return (PyObject *)CCORE_NEW_VEC3;
-  }
-  return PyNumber_TrueDivide(self, length_obj);
+static PyObject *Vec3_normalized(PyObject *self, PyObject *NOARGS) {
+  return (PyObject *)Vec3_normalized_obj_((Vec3Object *)self);
 }
 static Vec3Object *Vec3_cross_obj_(Vec3Object *self_, Vec3Object *other_) {
   Vec3Object *obj = CCORE_NEW_VEC3;
@@ -344,7 +343,11 @@ static PyObject *Vec3__repr__(PyObject *self) {
   PyObject *x = PyFloat_FromDouble(self_->x);
   PyObject *y = PyFloat_FromDouble(self_->y);
   PyObject *z = PyFloat_FromDouble(self_->z);
-  return PyUnicode_FromFormat("Vec3(%R, %R, %R)", x, y, z);
+  PyObject *repr = PyUnicode_FromFormat("Vec3(%R, %R, %R)", x, y, z);
+  Py_DECREF(x);
+  Py_DECREF(y);
+  Py_DECREF(z);
+  return repr;
 }
 static PyObject *Vec3__getitem__(PyObject *self, Py_ssize_t index) {
   Vec3Object *self_ = (Vec3Object *)self;
@@ -360,7 +363,7 @@ static PyObject *Vec3__getitem__(PyObject *self, Py_ssize_t index) {
     retval = PyFloat_FromDouble(self_->z);
     break;
   default:
-    PyErr_SetString(PyExc_IndexError, "");
+    PyErr_SetString(PyExc_IndexError, "vec3 index oob");
     retval = NULL;
   }
   return retval;
@@ -398,7 +401,8 @@ static PyObject *Vec3_from_matrix(PyObject *cls, PyObject *other) {
 }
 static PyObject *Vec3_from_matrix3(PyObject *cls, PyObject *other) {
   if (!PyObject_TypeCheck(other, &MatrixType)) {
-    PyErr_SetString(PyExc_TypeError, "can only call from_matrix with a matrix");
+    PyErr_SetString(PyExc_TypeError,
+                    "can only call from_matrix3 with a matrix");
     return NULL;
   }
   double **m = ((MatrixObject *)other)->m;
@@ -520,29 +524,91 @@ static int Matrix_init(MatrixObject *self, PyObject *args, PyObject *kwds) {
     PyErr_SetString(PyExc_TypeError, "Matrix() arg must be a sequence");
     return -1;
   }
-  self->rows = PySequence_Length(ma);
 
-  if (self->rows && !PySequence_Check(PySequence_GetItem(ma, 0))) {
-    PyErr_SetString(PyExc_ValueError, "Matrix() arg must be 2D");
+  self->rows = PySequence_Length(ma);
+  if (self->rows == -1) {
     return -1;
   }
+
   if (self->rows) {
-    self->cols = PySequence_Length(PySequence_GetItem(ma, 0));
-  }
-  self->m = (double **)malloc(self->rows * sizeof(double *));
-  for (Py_ssize_t i = 0; i < self->rows; i++) {
-    double *mr = calloc(self->cols, sizeof(double));
-    for (Py_ssize_t j = 0; j < self->cols; j++) {
-      mr[j] =
-          PyFloat_AsDouble(PySequence_GetItem(PySequence_GetItem(ma, i), j));
+    PyObject *first_row = PySequence_GetItem(ma, 0);
+    if (!first_row || !PySequence_Check(first_row)) {
+      PyErr_SetString(PyExc_ValueError, "Matrix() arg must be 2D");
+      Py_XDECREF(first_row); // Safely decrement if set
+      return -1;
     }
-    self->m[i] = mr;
+    self->cols = PySequence_Length(first_row);
+    Py_DECREF(first_row); // Release the reference
+    if (self->cols == -1) {
+      return -1; // Error if length retrieval failed
+    }
   }
-  if (PyErr_Occurred()) {
+
+  // Allocate the matrix rows
+  self->m = (double **)malloc(self->rows * sizeof(double *));
+  if (!self->m) {
+    PyErr_NoMemory();
     return -1;
   }
+
+  // Populate matrix elements
+  for (Py_ssize_t i = 0; i < self->rows; i++) {
+    PyObject *row = PySequence_GetItem(ma, i); // New reference
+    if (!row) {
+      // Error during row retrieval, clean up and return
+      for (Py_ssize_t k = 0; k < i; k++) {
+        free(self->m[k]);
+      }
+      free(self->m);
+      self->m = NULL;
+      return -1;
+    }
+
+    self->m[i] = (double *)calloc(self->cols, sizeof(double));
+    if (!self->m[i]) {
+      Py_DECREF(row);
+      PyErr_NoMemory();
+      // Clean up previously allocated rows
+      for (Py_ssize_t k = 0; k < i; k++) {
+        free(self->m[k]);
+      }
+      free(self->m);
+      self->m = NULL;
+      return -1;
+    }
+
+    for (Py_ssize_t j = 0; j < self->cols; j++) {
+      PyObject *item = PySequence_GetItem(row, j); // New reference
+      if (!item) {
+        Py_DECREF(row);
+        PyErr_SetString(PyExc_ValueError, "Matrix elements must be numbers");
+        // Clean up allocated memory
+        for (Py_ssize_t k = 0; k <= i; k++) {
+          free(self->m[k]);
+        }
+        free(self->m);
+        self->m = NULL;
+        return -1;
+      }
+      self->m[i][j] = PyFloat_AsDouble(item);
+      Py_DECREF(item);
+      if (PyErr_Occurred()) {
+        Py_DECREF(row);
+
+        for (Py_ssize_t k = 0; k <= i; k++) {
+          free(self->m[k]);
+        }
+        free(self->m);
+        self->m = NULL;
+        return -1;
+      }
+    }
+    Py_DECREF(row);
+  }
+
   return 0;
 }
+
 static void Matrix_dealloc(MatrixObject *self) {
   if (self->m != NULL) {
     for (Py_ssize_t i = 0; i < self->rows; i++) {
@@ -710,11 +776,14 @@ static Vec3Object *Matrix__matmul__obj_2vec3(MatrixObject *self_,
   rev->x = re->m[0][0];
   rev->y = re->m[1][0];
   rev->z = re->m[2][0];
-  free(re);
+  Py_DECREF(re);
   return rev;
 }
 static Vec3Object *Matrix_apply_to_vec3(MatrixObject *self_, Vec3Object *ve) {
-  return Matrix__matmul__obj_2vec3(self_, Matrix_from_vector_obj(ve));
+  MatrixObject *ve_m = Matrix_from_vector_obj(ve);
+  Vec3Object *mmuled = Matrix__matmul__obj_2vec3(self_, ve_m);
+  Py_DECREF(ve_m);
+  return mmuled;
 }
 static PyObject *Matrix__matmul__(PyObject *self, PyObject *other) {
   /*
@@ -919,6 +988,7 @@ static PyObject *Matrix_inverse_projection(PyObject *cls, PyObject *o) {
 }
 static MatrixObject *Matrix_inverse_viewport_obj(double x, double y, double w,
                                                  double h) {
+  // I loooove wolfram
   double **m = cCore_mk_id_matrix(4);
   m[0][0] = 2. / w;
   m[1][1] = 2. / h;
@@ -938,8 +1008,8 @@ static PyObject *Matrix_inverse_viewport(PyObject *cls, PyObject *args) {
 // MISC
 
 static PyObject *Matrix__getitem__(PyObject *self, PyObject *idx) {
+  MatrixObject *self_ = (MatrixObject *)self;
   if (PyLong_Check(idx)) {
-    MatrixObject *self_ = (MatrixObject *)self;
     long index = PyLong_AsLong(idx);
     if (PyErr_Occurred()) {
       return NULL;
@@ -960,7 +1030,9 @@ static PyObject *Matrix__getitem__(PyObject *self, PyObject *idx) {
       PyErr_SetString(PyExc_TypeError, "Bad index");
       return NULL;
     }
-
+    if (i>=self_->rows || j>=self_->cols){
+    	PyErr_SetString(PyExc_IndexError, "Matrix index out of range");
+    }
     return PyFloat_FromDouble(((MatrixObject *)self)->m[i][j]);
   }
   PyErr_SetString(PyExc_TypeError, "Matrix index must be an int or a tuple");
@@ -973,7 +1045,9 @@ static PyObject *Matrix__repr__(PyObject *self) {
   for (Py_ssize_t i = 0; i < self_->rows; i++) {
     PyList_Append(m, Matrix__getitem__(self, PyLong_FromSsize_t(i)));
   }
-  return PyUnicode_FromFormat("Matrix(%R)", m);
+  PyObject *repr = PyUnicode_FromFormat("Matrix(%R)", m);
+  Py_DECREF(m);
+  return repr;
 }
 // STRUCTS
 static PyMemberDef Matrix_members[] = {
@@ -1132,10 +1206,11 @@ static PyObject *Texture_from_ppm(PyObject *cls, PyObject *args) {
     unsigned char g = fgetc(fp);
     unsigned char b = fgetc(fp);
 
-    /*if (r == EOF || g == EOF || b == EOF) {
+    if (r == EOF || g == EOF || b == EOF) {
+      fclose(fp);
       PyErr_SetString(PyExc_EOFError, "eof while reading color");
       return NULL;
-    }*/
+    }
     Vec3Object *color = cCore_mk_vec3_obj((double)r, (double)g, (double)b);
     m[i][j] = color;
     if (++j == width) {
@@ -1143,6 +1218,7 @@ static PyObject *Texture_from_ppm(PyObject *cls, PyObject *args) {
       j = 0;
     }
   }
+  fclose(fp);
   TextureObject *texture =
       (TextureObject *)(&TextureType)->tp_alloc(&TextureType, 0);
   texture->width = width;
@@ -1221,12 +1297,12 @@ static int Box_init(BoxObject *self, PyObject *args, PyObject *kwds) {
   return 0;
 }
 static void Box_dealloc(BoxObject *self) {
-  /*if (self->min != NULL) {
+  if (self->min != NULL) {
     Py_XDECREF(self->min);
   }
   if (self->max != NULL) {
     Py_XDECREF(self->max);
-  }*/
+  }
 }
 
 static bool Box_collides_with_vec3_obj(BoxObject *self, Vec3Object *other) {
@@ -1254,7 +1330,7 @@ static PyObject *Box_update(PyObject *self, PyObject *new) {
   if (!PyObject_TypeCheck(new, &Vec3Type)) {
     PyErr_SetString(PyExc_TypeError, "expected a Vec3 arg");
   }
-  Box_update_obj((BoxObject*)self, (Vec3Object *)new);
+  Box_update_obj((BoxObject *)self, (Vec3Object *)new);
   Py_INCREF(new);
   return new;
 }
@@ -1262,14 +1338,14 @@ static PyObject *Box_reset(PyObject *self, PyObject *NOARGS) {
   BoxObject *self_ = (BoxObject *)self;
   self_->min->x = self_->min->y = self_->min->z = INFINITY;
   self_->max->x = self_->max->y = self_->max->z = -INFINITY;
-  return Py_None;
+  Py_RETURN_NONE;
 }
-static PyObject *Box_empty(PyObject *cls, PyObject *NOARGS){
-  BoxObject *box = (BoxObject*)(&BoxType)->tp_alloc(&BoxType, 0);
+static PyObject *Box_empty(PyObject *cls, PyObject *NOARGS) {
+  BoxObject *box = (BoxObject *)(&BoxType)->tp_alloc(&BoxType, 0);
   box->min = cCore_mk_vec3_obj(INFINITY, INFINITY, INFINITY);
   box->max = cCore_mk_vec3_obj(-INFINITY, -INFINITY, -INFINITY);
   Py_INCREF(box);
-  return (PyObject*)box;
+  return (PyObject *)box;
 }
 static PyMemberDef Box_members[] = {
     {"min", Py_T_OBJECT_EX, offsetof(BoxObject, min), 0,
@@ -1282,7 +1358,7 @@ static PyMethodDef Box_methods[] = {
     {"collides_with", Box_collides_with, METH_O, "Collision check"},
     {"update", Box_update, METH_O, "Updates the box with a new vertex"},
     {"reset", Box_reset, METH_NOARGS, "Resets the box to empty"},
-    {"empty", Box_empty, METH_CLASS|METH_NOARGS, "Creates a new empty box"},
+    {"empty", Box_empty, METH_CLASS | METH_NOARGS, "Creates a new empty box"},
     {NULL, NULL, 0, NULL},
 };
 static PyTypeObject BoxType = {
@@ -1320,6 +1396,7 @@ static Vec3Object *cCore_mk_vec3_obj(double x, double y, double z) {
   obj->x = x;
   obj->y = y;
   obj->z = z;
+  Py_INCREF(obj);
   return obj;
 }
 static PyObject *cCore_mk_vec3(double x, double y, double z) {
@@ -1329,9 +1406,9 @@ static PyObject *cCore_mk_vec3(double x, double y, double z) {
 static Vec3Object *cCore_barymetric_(Vec3Object *v0, Vec3Object *v1,
                                      Vec3Object *v2, double x, double y) {
 
-  Vec3Object *u = (Vec3Object *)Vec3_cross(
-      cCore_mk_vec3(v2->x - v0->x, v1->x - v0->x, v0->x - x),
-      cCore_mk_vec3(v2->y - v0->y, v1->y - v0->y, v0->y - y));
+  Vec3Object *u = Vec3_cross_obj_(
+      cCore_mk_vec3_obj(v2->x - v0->x, v1->x - v0->x, v0->x - x),
+      cCore_mk_vec3_obj(v2->y - v0->y, v1->y - v0->y, v0->y - y));
   double uz = u->z;
   if (fabs(uz) < 1) {
     return cCore_mk_vec3_obj(-1, 1, 1);
@@ -1357,7 +1434,7 @@ static Vec3Object *cCore_calcphong_(Vec3Object *normal, Vec3Object *lightdir,
   obj->x = CCORE_PHONG_1_(color->x);
   obj->y = CCORE_PHONG_1_(color->y);
   obj->z = CCORE_PHONG_1_(color->z);
-
+  Py_DECREF(r);
   return obj;
 }
 
@@ -1400,7 +1477,11 @@ static Vec3_pair *cCore_compute_tangent_space_basis_(
   CCORE_MK_MATRIX_OBJ(mmj, 4, 1, mj);
   Vec3Object *vi = Vec3_normalized_obj_(Matrix__matmul__obj_2vec3(ai, mi));
   Vec3Object *vj = Vec3_normalized_obj_(Matrix__matmul__obj_2vec3(ai, mj));
-
+  Py_DECREF(a);
+  Py_DECREF(d1);
+  Py_DECREF(d2);
+  Py_DECREF(a);
+  Py_DECREF(ai);
   dp->a = vi;
   dp->b = vj;
   return dp;
@@ -1413,15 +1494,14 @@ static Vec3Object *cCore_getuv_(TextureObject *texture, Vec3Object *uv) {
   long v = (fabs(texture->height - uv->y * (texture->height - 1)));
   return texture->m[v % texture->height][u % texture->width];
 }
-static void cCore_set_pixel_(PyObject *img, double x, double y,
+static void cCore_set_pixel_(PyObject *setpixel_callback, double x, double y,
                              Vec3Object *color) {
   PyObject *x_coord = PyFloat_FromDouble(x);
   PyObject *y_coord = PyFloat_FromDouble(y);
-  PyObject *coords = PyTuple_Pack(2, x_coord, y_coord);
-  PyObject *pycolor = (PyObject *)color;
-  PyObject_SetItem(img, coords, pycolor);
-  Py_DECREF(pycolor);
-  Py_DECREF(coords);
+  PyObject *args =
+      PyTuple_Pack(2, (PyObject *)color, PyTuple_Pack(2, x_coord, y_coord));
+  PyObject_CallObject(setpixel_callback, args);
+  Py_DECREF(args);
   Py_DECREF(x_coord);
   Py_DECREF(y_coord);
 }
@@ -1433,131 +1513,147 @@ static bool cCore_draw_triangle_(
     Vec3Object *light_dir, double ambient_coeff, double diffuse_coeff,
     double specular_coeff, Vec3Object *rotation, int tangent_space,
     double mindepth) {
-  if (zbuffer->rows <= height || zbuffer->cols <= width) {
-    PyErr_SetString(PyExc_ValueError, "zbuffer too small");
-    return false;
-  }
-  double minx = fmax(0, fmin(fmin(v0->x, v1->x), v2->x));
-  double miny = fmax(0, fmin(fmin(v0->y, v1->y), v2->y));
-  double maxx = fmin(width, fmax(fmax(v0->x, v1->x), v2->x));
-  double maxy = fmin(height, fmax(fmax(v0->y, v1->y), v2->y));
-  if (light_dir == NULL) {
-    light_dir = VEC3_ZBACK;
-  }
-  for (int x = minx; x <= maxx + 1; x++) {
-    for (int y = miny; y <= maxy + 1; y++) {
 
-      double u, v, w;
-      double gouraud_scale = 1;
-      Vec3Object *phong;
-      Vec3Object *col;
-      Vec3Object *ta, *tb, *tc;
-      // printf("bary\n");
-      Vec3Object *uv = cCore_barymetric_(v0, v1, v2, x, y);
-      u = uv->x;
-      v = uv->y;
-      w = uv->z;
-      if (u >= 0 && v >= 0 && w >= 0 && 0 <= x && x <= width && 0 <= y &&
-          y <= height) {
-        double z = v0->z * u + v1->z * v + v2->z * w;
-        double zbuffer_z = zbuffer->m[y][x];
-        if (!zbuffer_z || zbuffer_z < z) {
-          zbuffer->m[y][x] = z;
-          if (lighting == DEPTH) {
-            cCore_set_pixel_(
-                img, x, y,
-                Vec3__mul__obj_(
-                    VEC3_ALLONES,
-                    fmin(255, fmax(0, 255 * (mindepth + z) / (mindepth * 2)))));
-            continue;
-          }
-          Vec3Object *interpolated_uv_normal = NULL, *uv_normal = NULL;
-          if (vertex_normals != NULL) {
-            Vec3Object *na = vertex_normals->v0;
-            Vec3Object *nb = vertex_normals->v1;
-            Vec3Object *nc = vertex_normals->v2;
-            interpolated_uv_normal = Vec3__add__obj_(
-                Vec3__add__obj_(Vec3__mul__obj_(na, u), Vec3__mul__obj_(nb, v)),
-                Vec3__mul__obj_(nc, w));
-            uv_normal = interpolated_uv_normal;
-          }
-          if (texture_coords == NULL) {
-            col = color_or_texture->m[0][0];
-            if (lighting == PHONG) {
-              PyErr_SetString(PyExc_ValueError,
-                              "can't phong without texture coords");
-              return false;
-            } else if (lighting == GOURAUD) {
-              if (interpolated_uv_normal != NULL) {
-                gouraud_scale =
-                    fmax(0, -Vec3_dot_obj_(interpolated_uv_normal, light_dir));
-              }
-            }
-          } else {
-
-            ta = texture_coords->v0;
-            tb = texture_coords->v1;
-            tc = texture_coords->v2;
-
-            Vec3Object *tp = Vec3__add__obj_(
-                Vec3__add__obj_(Vec3__mul__obj_(ta, u), Vec3__mul__obj_(tb, v)),
-                Vec3__mul__obj_(tc, w));
-            col = cCore_getuv_(color_or_texture, tp);
-            if (lighting == NONE) {
-              cCore_set_pixel_(img, x, y, Vec3__mul__obj_(col, 1));
-              if (PyErr_Occurred()) {
-                return NULL;
-              }
-              continue;
-            }
-
-            if (normal_map != NULL) {
-              Vec3Object *sampled_normal = cCore_getuv_(normal_map, tp);
-              if (!sampled_normal) {
-                return false;
-              }
-              uv_normal = Vec3_normalized_obj_(Vec3__sub__obj_(
-                  Vec3__mul__obj_(sampled_normal, 2. / 255.), VEC3_ALLONES));
-              if (tangent_space) {
-                Vec3_pair *ij = cCore_compute_tangent_space_basis_(
-                    v0, v1, v2, ta, tb, tc, interpolated_uv_normal);
-                Vec3Object *i = ij->a;
-                Vec3Object *j = ij->b;
-                MatrixObject *tbn_matrix =
-                    cCore_mk_matrix_from_vec3_obj(i, j, interpolated_uv_normal);
-                uv_normal = Vec3_normalized_obj_(
-                    Matrix_apply_to_vec3(tbn_matrix, uv_normal));
-              }
-            }
-            if (uv_normal == NULL) {
-              gouraud_scale = 1;
-              phong = col;
-            } else {
-              if (lighting == GOURAUD) {
-                gouraud_scale = fmax(0, -Vec3_dot_obj_(uv_normal, light_dir));
-
-              } else if (lighting == PHONG) {
-                Vec3Object *specular_uv = VEC3_ALLONES;
-                if (specular_map != NULL) {
-                  specular_uv = cCore_getuv_(specular_map, tp);
-                }
-                phong = cCore_calcphong_(Vec3__neg__obj_(uv_normal), light_dir,
-                                         specular_uv, ambient_coeff,
-                                         diffuse_coeff, specular_coeff, col);
-              }
-            }
-          }
-          if (lighting == GOURAUD) {
-            cCore_set_pixel_(img, x, y, Vec3__mul__obj_(col, gouraud_scale));
-
-          } else if (lighting == PHONG) {
-            cCore_set_pixel_(img, x, y, phong);
-          }
-        }
-      }
+    if (zbuffer->rows <= height || zbuffer->cols <= width) {
+        PyErr_SetString(PyExc_ValueError, "zbuffer too small");
+        return false;
     }
-  }
-  return true;
+
+    double minx = fmax(0, fmin(fmin(v0->x, v1->x), v2->x));
+    double miny = fmax(0, fmin(fmin(v0->y, v1->y), v2->y));
+    double maxx = fmin(width, fmax(fmax(v0->x, v1->x), v2->x));
+    double maxy = fmin(height, fmax(fmax(v0->y, v1->y), v2->y));
+    if (light_dir == NULL) {
+        light_dir = VEC3_ZBACK;  // Using a pre-defined constant instead of creating new
+    }
+
+    for (int x = minx; x <= maxx + 1; x++) {
+        for (int y = miny; y <= maxy + 1; y++) {
+
+            double u, v, w;
+            double gouraud_scale = 1;
+            Vec3Object *phong = NULL; // Initialized to NULL to prevent using uninitialized values
+            Vec3Object *col = NULL;
+            Vec3Object *uv_normal = NULL;
+
+            Vec3Object *uv = cCore_barymetric_(v0, v1, v2, x, y);
+            u = uv->x;
+            v = uv->y;
+            w = uv->z;
+            Py_DECREF(uv);  // Decrement uv after use to avoid leaks
+
+            if (u >= 0 && v >= 0 && w >= 0 && 0 <= x && x <= width && 0 <= y && y <= height) {
+                double z = v0->z * u + v1->z * v + v2->z * w;
+                double zbuffer_z = zbuffer->m[y][x];
+
+                if (!zbuffer_z || zbuffer_z < z) {
+                    zbuffer->m[y][x] = z;
+
+                    if (lighting == DEPTH) {
+                        Vec3Object *depth_col = Vec3__mul__obj_(
+                            VEC3_ALLONES, fmin(255, fmax(0, 255 * (mindepth + z) / (mindepth * 2))));
+                        cCore_set_pixel_(img, x, y, depth_col);
+                        Py_DECREF(depth_col);
+                        continue;
+                    }
+
+                    Vec3Object *interpolated_uv_normal = NULL;
+                    if (vertex_normals != NULL) {
+                        Vec3Object *na = vertex_normals->v0;
+                        Vec3Object *nb = vertex_normals->v1;
+                        Vec3Object *nc = vertex_normals->v2;
+
+                        interpolated_uv_normal = Vec3__add__obj_(
+                            Vec3__add__obj_(Vec3__mul__obj_(na, u), Vec3__mul__obj_(nb, v)),
+                            Vec3__mul__obj_(nc, w));
+                        //Py_DECREF(na);
+                        //Py_DECREF(nb);
+                        //Py_DECREF(nc);
+
+                        uv_normal = interpolated_uv_normal;
+                    }
+
+                    if (texture_coords == NULL) {
+                        col = color_or_texture->m[0][0];
+                        if (lighting == PHONG) {
+                            PyErr_SetString(PyExc_ValueError, "can't phong without texture coords");
+                            return false;
+                        } else if (lighting == GOURAUD) {
+                            if (interpolated_uv_normal != NULL) {
+                                gouraud_scale = fmax(0, -Vec3_dot_obj_(interpolated_uv_normal, light_dir));
+                            }
+                        }
+                    } else {
+                        Vec3Object *ta = texture_coords->v0;
+                        Vec3Object *tb = texture_coords->v1;
+                        Vec3Object *tc = texture_coords->v2;
+
+                        Vec3Object *tp = Vec3__add__obj_(
+                            Vec3__add__obj_(Vec3__mul__obj_(ta, u), Vec3__mul__obj_(tb, v)),
+                            Vec3__mul__obj_(tc, w));
+                        col = cCore_getuv_(color_or_texture, tp);
+                        Py_DECREF(tp);
+
+                        if (lighting == NONE) {
+                            cCore_set_pixel_(img, x, y, Vec3__mul__obj_(col, 1));
+                            //Py_DECREF(col);
+                            continue;
+                        }
+
+                        if (normal_map != NULL) {
+                            Vec3Object *sampled_normal = cCore_getuv_(normal_map, tp);
+                            if (!sampled_normal) {
+                                Py_XDECREF(interpolated_uv_normal);
+                                return false;
+                            }
+                            uv_normal = Vec3_normalized_obj_(Vec3__sub__obj_(
+                                Vec3__mul__obj_(sampled_normal, 2.0 / 255.0), VEC3_ALLONES));
+                            Py_DECREF(sampled_normal);
+
+                            if (tangent_space && interpolated_uv_normal != NULL) {
+                                Vec3_pair *ij = cCore_compute_tangent_space_basis_(
+                                    v0, v1, v2, ta, tb, tc, interpolated_uv_normal);
+                                Vec3Object *i = ij->a;
+                                Vec3Object *j = ij->b;
+
+                                MatrixObject *tbn_matrix = cCore_mk_matrix_from_vec3_obj(i, j, interpolated_uv_normal);
+                                Vec3Object *temp_normal = Matrix_apply_to_vec3(tbn_matrix, uv_normal);
+                                uv_normal = Vec3_normalized_obj_(temp_normal);
+
+                                Py_DECREF(temp_normal);
+                                Py_DECREF(tbn_matrix);
+                                Py_DECREF(i);
+                                Py_DECREF(j);
+                                free(ij);
+                            }
+                        }
+
+                        if (lighting == GOURAUD) {
+                            gouraud_scale = fmax(0, -Vec3_dot_obj_(uv_normal, light_dir));
+                        } else if (lighting == PHONG) {
+                            Vec3Object *specular_uv = VEC3_ALLONES;
+                            if (specular_map != NULL) {
+                                specular_uv = cCore_getuv_(specular_map, tp);
+                            }
+                            phong = cCore_calcphong_(Vec3__neg__obj_(uv_normal), light_dir,
+                                                     specular_uv, ambient_coeff, diffuse_coeff,
+                                                     specular_coeff, col);
+                        }
+                    }
+
+                    if (lighting == GOURAUD) {
+                        Vec3Object *gouraud_col = Vec3__mul__obj_(col, gouraud_scale);
+                        cCore_set_pixel_(img, x, y, gouraud_col);
+                        Py_DECREF(gouraud_col);
+                    } else if (lighting == PHONG) {
+                        cCore_set_pixel_(img, x, y, phong);
+                        Py_DECREF(phong);
+                    }
+                }
+            }
+        }
+    }
+    return true;
 }
 static Triangle *cCore_sequence_to_triangle(PyObject *seq) {
   if (seq == Py_None) {
@@ -1577,6 +1673,9 @@ static Triangle *cCore_sequence_to_triangle(PyObject *seq) {
   tr->v0 = (Vec3Object *)v0p;
   tr->v1 = (Vec3Object *)v1p;
   tr->v2 = (Vec3Object *)v2p;
+  Py_DECREF(v0p);
+  Py_DECREF(v1p);
+  Py_DECREF(v2p);
   return tr;
 }
 static PyObject *cCore_draw_triangle(PyObject *self, PyObject *args,
@@ -1644,11 +1743,13 @@ static PyObject *cCore_draw_triangle(PyObject *self, PyObject *args,
           (TextureObject *)normal_map, (TextureObject *)specular_map,
           (Vec3Object *)light_dir, ambient_coeff, diffuse_coeff, specular_coeff,
           (Vec3Object *)rotation, tangent_space, mindepth)) {
+    free(texture_coords_tri);
+    free(vertex_normals_tri);
     return NULL;
   }
   free(texture_coords_tri);
   free(vertex_normals_tri);
-  return Py_None; // TODO
+  Py_RETURN_NONE; // TODO
 }
 static PyObject *cCore_compute_tangent_space_basis(PyObject *self,
                                                    PyObject *args) {

@@ -75,7 +75,7 @@ class Enemy:
         )
         self.engine.after(1500, self.despawn)
 
-    def despawn(self):
+    def despawn(self, *engine):
         self.health_bar.kill()
         if self.object in self.engine.scene_3d.objects:
             self.engine.scene_3d.objects.remove(self.object)
@@ -216,7 +216,7 @@ class Bullet:
         self.object.translate(self.direction * BULLET_SPEED * engine.delta)
         for target in self.targets:  # O(n)
             if target.alive and target.object.bbox.collides_with(self.position):
-                self.engine["bullets_hit"]+=1
+                self.engine["bullets_hit"] += 1
                 target.hit(BULLET_DMG)
                 qpos = (
                     self.object._projection_x_viewport @ self.position

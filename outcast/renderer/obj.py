@@ -61,12 +61,6 @@ class ObjFile:
         self._viewport = vec3.Matrix.viewport(
             imw / 8, imh / 8, imw * 3 / 4, imh * 3 / 4
         )
-        self._i_projection = vec3.Matrix.inverse_projection(
-            self.defaults.get("cam_z", CAM_Z)
-        )
-        self._i_viewport = vec3.Matrix.inverse_viewport(
-            imw / 8, imh / 8, imw * 3 / 4, imh * 3 / 4
-        )
         print(self._viewport, f"{imw/8},{imh/8},{imw*3/4},{imh*3/4}")
         self._projection_x_viewport = self._viewport @ self._projection
 
@@ -101,6 +95,7 @@ class ObjFile:
     def add_texture(self, texture_type, texture_file):
         if isinstance(texture_file, str):
             self.textures[texture_type] = cCore.Texture.from_ppm(texture_file)
+       
         else:
             self.textures[texture_type] = texture_file
 

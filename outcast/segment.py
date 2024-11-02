@@ -25,6 +25,7 @@ def add_segment(segment_name):
 
 @add_segment("intro")
 def _segment_intro(engine):
+    engine.scene_3d.set_kwargs(backface_culling=True)
     engine.scene_3d.objects = set()
     horn = loader.MODELS["horn"]
     announcement = loader.SOUNDS["announcement.mp3"]
@@ -49,7 +50,7 @@ def _segment_intro(engine):
             "THE OUTCAST",
             titlefont,
             2.5,
-            (0, 128, 128),
+            (255, 255, 0),  # ff0
             helpers.get_center(engine.screen),
         ),
     )
@@ -57,9 +58,9 @@ def _segment_intro(engine):
     engine.wait(4000)  # block until the end
     engine.after(0, lambda engine: play_segment("destination_select", engine))
 
-
 @add_segment("destination_select")
 def _segment_destination_select(engine):
+    engine.scene_3d.set_kwargs(backface_culling=False)
     def destination_select_button_handler(event):
         if event.type == pygame_gui.UI_BUTTON_PRESSED and event.ui_object_id in (
             "#kepler",
@@ -196,7 +197,7 @@ def _segment_main_game(engine):
         engine.after(1500, mkenemy)
 
     def _ship_kill_handler(ship):
-        engine["ships_destroyed"]+=1
+        engine["ships_destroyed"] += 1
         score_counter.update_score(
             200,
             tuple(
@@ -231,7 +232,7 @@ def _segment_main_game(engine):
         for enemy in list(enemies):  # ditto
             enemy.despawn()
             enemies.remove(enemy)
-        for obj in ("enemy_ship","rock"):  
+        for obj in ("enemy_ship", "rock"):
             loader.MODELS[obj] = loader.apply_oi_transforms(
                 obj, loader.MODELS[obj].clone()
             )  # reset_transform
@@ -252,9 +253,9 @@ def _segment_main_game(engine):
     bullet = loader.MODELS["bullet"]
     gun_barrel = loader.MODELS["gun_barrel"]
     gunshot = loader.SOUNDS["gunshot.mp3"]
-    engine["bullets_fired"]=0
-    engine["bullets_hit"]=0
-    engine["ships_destroyed"]=0
+    engine["bullets_fired"] = 0
+    engine["bullets_hit"] = 0
+    engine["ships_destroyed"] = 0
     loader.SOUNDS["police-siren.mp3"].fadeout(5000)
     asteroid.translate(renderer.vec3.Vec3(-10, 0, 0))
     assert (
@@ -286,7 +287,7 @@ def _segment_main_game(engine):
             sprites.Bullet(
                 engine.scene_3d, gbcp, position - gbcp, engine, enemies, score_counter
             ).fire()
-            engine["bullets_fired"]+=1
+            engine["bullets_fired"] += 1
 
     def _asteroids_loop():
         a = sprites.Asteroid(engine, _asteroid_kill_handler, _asteroid_oldage_handler)
@@ -314,6 +315,10 @@ def _segment_final_screen(engine):
                 u_won_panel.kill()
                 engine.remove_ui_event_handler("handle_final_butt")
                 play_segment("destination_select", engine)
+            if event.ui_object_id.endswith("#bhome"):
+                u_won_panel.kill()
+                engine.remove_ui_event_handler("handle_final_butt")
+                play_segment("main_menu", engine)
 
     """engine["score"] = 69
     engine["bullets_fired"] = 420
@@ -411,6 +416,58 @@ def _segment_final_screen(engine):
         container=u_won_panel,
     )
     engine.add_ui_event_handler(button_handler, "handle_final_butt")
+
+
+@add_segment("main_menu")
+def _segment_main_menu(engine):
+    def button_handler(event):
+        if event.type == pygame_gui.UI_BUTTON_PRESSED:
+            if event.ui_object_id.endswith("#bquit"):
+                pygame.quit()
+                sys.exit(0)
+            elif event.ui_object_id.endswith("#bplay"):
+                engine.remove_ui_event_handler("handle_menu_butt")
+                MUSIC_CHANNEL.get_sound().fadeout(1000)
+                title.kill()
+                butt_play.kill()
+                butt_quit.kill()
+                engine.scene_3d.objects.remove(asship)
+                engine.clear_timers()
+                engine.update()
+                
+                engine.after(500, lambda engine: play_segment("intro", engine))
+
+    title = pygame_gui.elements.UILabel(
+        pygame.rect.Rect(0, 0, -1, -1),
+        anchors={"center": "center"},
+        text="THE OUTCAST",
+        object_id="@fat",
+    )
+    butt_play = pygame_gui.elements.UIButton(
+        pygame.rect.Rect(-75, 100, 100, 50),
+        anchors={"center": "center"},
+        text="Play",
+        object_id=ObjectID(class_id="@pixelated", object_id="#bplay"),
+    )
+    butt_quit = pygame_gui.elements.UIButton(
+        pygame.rect.Rect(75, 100, 100, 50),
+        anchors={"center": "center"},
+        text="Quit",
+        object_id=ObjectID(class_id="@pixelated", object_id="#bquit"),
+    )
+    
+    if not MUSIC_CHANNEL.get_sound():
+        MUSIC_CHANNEL.play(loader.SOUNDS["theme_violin.mp3"])
+    asship = loader.MODELS["enemy_ship"].clone()
+    asship.translate(-asship.centerpoint + renderer.vec3.Vec3(0, 0, 7.5))
+    asship.rotate(renderer.vec3.Vec3(0, 90, 0))
+    asship.rotate(renderer.vec3.Vec3(15, 0, 0))
+    engine.until(
+        float("inf"), helpers.rotate_object(asship, renderer.vec3.Vec3(0, 45, 0))
+    )
+    engine.scene_3d.add_obj(asship)
+    engine.add_ui_event_handler(button_handler, "handle_menu_butt")
+    engine.update()
 
 
 def play_segment(segment_name, engine):

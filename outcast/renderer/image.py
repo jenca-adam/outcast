@@ -32,7 +32,8 @@ class Image:
             for y, color in enumerate(row):
                 self._pgm_putpixel(x, y, color)
 
-    def _pgm_putpixel(self, x, y, col):
+    def _pgm_putpixel(self,col,coords):
+        x,y=coords
         if self._screen is None:
             raise TypeError("can't _pgm_putpixel(): no screen")
         pygame.draw.rect(
@@ -110,7 +111,7 @@ class Image:
     def draw_triangle(self, v0, v1, v2, color_or_texture, *args, **kwargs):
 
         cCore.draw_triangle(
-            self, self.width, self.height, v0, v1, v2, color_or_texture, *args, **kwargs
+            self._pgm_putpixel, self.width, self.height, v0, v1, v2, color_or_texture, *args, **kwargs
         )
         """minx = max(0, min(v0.x, v1.x, v2.x))
         miny = max(0, min(v0.y, v1.y, v2.y))

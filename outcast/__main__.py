@@ -1,6 +1,5 @@
 import pygame
 import traceback
-
 try:
     import coloredlogs
 
@@ -10,7 +9,9 @@ except:
 from .msgbox import show_error
 from .settings import *
 
-
+import tracemalloc 
+  
+#tracemalloc.start() 
 def main():
     try:
         from . import loader
@@ -18,7 +19,6 @@ def main():
         from . import engine
         from .scene import setup_scene
         from .mixer import init_mixer
-
         pygame.display.init()
         pygame.font.init()
         pygame.freetype.init()
@@ -34,10 +34,12 @@ def main():
         # segment.play_segment("main_game_intro", outcast)
         outcast.loop()
     except Exception as e:
+
         if isinstance(e, SystemExit) or isinstance(e, KeyboardInterrupt):
             return
         pygame.mixer.quit()
         pygame.display.quit()
+        pygame.quit()
         show_error(traceback.format_exc())
 
 

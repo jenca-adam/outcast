@@ -17,7 +17,6 @@ class Scene:
         imh=None,
         outfile=None,
         screen=None,
-        lighting="phong",
         chunk_size=1,
         **kwargs,
     ):
@@ -29,13 +28,11 @@ class Scene:
                 imh,
                 outfile,
                 screen,
-                lighting,
-                chunk_size,
-                zbuffer,
+                chunk_size=chunk_size,
+                zbuffer=zbuffer,
                 **kwargs,
                 **self.default_kwargs,
             )
-        del zbuffer
 
     def set_kwargs(self, **kwargs):
         self.default_kwargs.update(kwargs)
