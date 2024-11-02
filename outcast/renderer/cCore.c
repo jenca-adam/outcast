@@ -1152,7 +1152,7 @@ static int Texture_init(TextureObject *self, PyObject *args, PyObject *kwds) {
   }
   self->width = width;
   self->height = height;
-  self->m = malloc(width * height * sizeof(Vec3Object *));
+  self->m = malloc(width * height * sizeof(Vec3Object **));
   if (self->m == NULL) {
     PyErr_SetString(PyExc_MemoryError, "malloc fail");
     return -1;
@@ -1180,23 +1180,27 @@ static PyObject *Texture_from_ppm(PyObject *cls, PyObject *args) {
   char mode[3];
   if (!fgets(mode, sizeof(mode), fp)) {
     PyErr_SetString(PyExc_OSError, "ppm format error");
+    fclose(fp);
     return NULL;
   }
   if (strcmp(mode, "P6")) {
     PyErr_SetString(PyExc_OSError, "ppm format error");
+    fclose(fp);
     return NULL;
   }
   if (fscanf(fp, "%ld %ld %d", &width, &height, &maxn) != 3) {
     PyErr_SetString(PyExc_OSError, "ppm format error");
+    fclose(fp);
     return NULL;
   }
   if (maxn != 255) {
     char *es;
     asprintf(&es, "ppm not in 24-bit format: %s", fn);
+    fclose(fp);
     PyErr_SetString(PyExc_NotImplementedError, es);
     return NULL;
   }
-  Vec3Object ***m = malloc(width * height * sizeof(Vec3Object *));
+  Vec3Object ***m = malloc(width * height * sizeof(Vec3Object **));
   int i = 0, j = 0;
   fgetc(fp);
   while (!feof(fp) && i < height) {
@@ -1207,6 +1211,7 @@ static PyObject *Texture_from_ppm(PyObject *cls, PyObject *args) {
     unsigned char b = fgetc(fp);
 
     if (r == EOF || g == EOF || b == EOF) {
+      free(m);
       fclose(fp);
       PyErr_SetString(PyExc_EOFError, "eof while reading color");
       return NULL;
@@ -1376,7 +1381,7 @@ static PyTypeObject BoxType = {
 //// formerly core.py
 static MatrixObject *
 cCore_mk_matrix_from_vec3_obj(Vec3Object *v0, Vec3Object *v1, Vec3Object *v2) {
-  double **m = malloc(9 * sizeof(double));
+  double **m = malloc(9 * sizeof(double*));
   m[0] = calloc(3, sizeof(double));
   m[1] = calloc(3, sizeof(double));
   m[2] = calloc(3, sizeof(double));
@@ -1774,7 +1779,9 @@ static PyObject *cCore_compute_tangent_space_basis(PyObject *self,
   if (!dp) {
     return NULL;
   }
-  return PyTuple_Pack(2, (PyObject *)dp->a, (PyObject *)dp->b);
+  PyObject* out = PyTuple_Pack(2, (PyObject *)dp->a, (PyObject *)dp->b);
+  free(dp);
+  return out;
 }
 static PyObject *cCore_calcphong(PyObject *self, PyObject *args) {
   PyObject *normal, *lightdir, *specular, *color;

@@ -11,7 +11,6 @@ from .settings import *
 
 import tracemalloc 
   
-#tracemalloc.start() 
 def main():
     try:
         from . import loader
@@ -34,7 +33,7 @@ def main():
         # segment.play_segment("main_game_intro", outcast)
         outcast.loop()
     except Exception as e:
-
+        
         if isinstance(e, SystemExit) or isinstance(e, KeyboardInterrupt):
             return
         pygame.mixer.quit()

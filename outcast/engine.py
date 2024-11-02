@@ -92,6 +92,7 @@ class Engine:
                     eh(event)
             if event.type == pygame.QUIT:
                 #snapshot=tracemalloc.take_snapshot()
+                #snapshot.dump("tracemalloc.out")
                 #breakpoint()
                 self.quit()
             if pygame.USEREVENT <= event.type <= pygame.NUMEVENTS:
