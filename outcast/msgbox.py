@@ -6,6 +6,7 @@ import sys
 
 
 def show_error(errtext="An error has occurred", errtitle="ERROR", size=(600, 400)):
+    pygame.font.init()
     print(errtext, file=sys.stderr)
     try:
         # CREATE A NEW SCREEN UI MANAGER IN CASE THE DEFAULT ONE CRASHED
@@ -34,3 +35,4 @@ def show_error(errtext="An error has occurred", errtitle="ERROR", size=(600, 400
             pygame.display.flip()
     except:
         print("FATAL: errbox show failed", file=sys.stderr)
+        raise

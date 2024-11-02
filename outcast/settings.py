@@ -17,18 +17,18 @@ LIGHTING = "phong"
 SHIP_MOVE_SPEED = 0.5
 DIFFICULTIES = {
     "#kepler": {
-        "music": "metal.mp3",
+        "music": "revenge.mp3",
         "background": "outer-space.png",
-        "timeout": 1,
+        "timeout": 45,
     },
     "#gliese": {
-        "music": "ghost.mp3",
+        "music": "blood-sludge.mp3",
         "background": "outer-space1.png",
-        "timeout": 55,
+        "timeout": 50,
     },
     "#proxima": {
-        "music": "circle_pit.mp3",
+        "music": "of-ambrosia.mp3",
         "background": "outer-space2.png",
-        "timeout": 65,
+        "timeout": 55,
     },
 }

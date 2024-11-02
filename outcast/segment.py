@@ -9,6 +9,7 @@ from . import loader
 from . import helpers
 from . import sprites
 from . import scorecounter
+from . import credits
 from .engine import FRAME, TIMEOUT
 from .mixer import MUSIC_CHANNEL, SFX_CHANNEL
 
@@ -90,14 +91,14 @@ def _segment_destination_select(engine):
         text="KEPLER 1649C",
         anchors={"center": "center"},
         manager=engine.uimgr,
-        object_id=ObjectID(object_id="#kepler", class_id="@pixelated"),
+        object_id=ObjectID(object_id="#kepler", class_id="@pixelated_button"),
     )
     gliese_button = pygame_gui.elements.UIButton(
         relative_rect=pygame.Rect((-25, 0), (-1, 50)),
         text="GLIESE 6677CC",
         anchors={"center": "center"},
         manager=engine.uimgr,
-        object_id=ObjectID(object_id="#gliese", class_id="@pixelated"),
+        object_id=ObjectID(object_id="#gliese", class_id="@pixelated_button"),
     )
 
     proxima_button = pygame_gui.elements.UIButton(
@@ -105,7 +106,7 @@ def _segment_destination_select(engine):
         text="PROXIMA CENTAURI B",
         anchors={"center": "center"},
         manager=engine.uimgr,
-        object_id=ObjectID(object_id="#proxima", class_id="@pixelated"),
+        object_id=ObjectID(object_id="#proxima", class_id="@pixelated_button"),
     )
     engine.add_ui_event_handler(destination_select_button_handler, "dest_butt")
 
@@ -390,7 +391,7 @@ def _segment_final_screen(engine):
     get_a_life = pygame_gui.elements.UILabel(
         pygame.rect.Rect(0, 310, -1, -1),
         anchors={"top": "top", "centerx": "centerx"},
-        text=random.choice(loader.TEXTS["final_messages.txt"]),
+        text=random.choice(loader.TEXTS["final_messages.txt"].splitlines()),
         object_id=ObjectID(class_id="@pixelated", object_id="#finmsg"),
         container=u_won_panel,
     )
@@ -398,21 +399,21 @@ def _segment_final_screen(engine):
         pygame.rect.Rect(120, 380, 100, 50),
         anchors={"top": "top", "left": "left"},
         text="Retry",
-        object_id=ObjectID(class_id="@pixelated", object_id="#bretry"),
+        object_id=ObjectID(class_id="@pixelated_button", object_id="#bretry"),
         container=u_won_panel,
     )
     butt_home = pygame_gui.elements.UIButton(
         pygame.rect.Rect(20, 380, 100, 50),
         anchors={"top": "top", "left_target": butt_retry},
         text="Home",
-        object_id=ObjectID(class_id="@pixelated", object_id="#bhome"),
+        object_id=ObjectID(class_id="@pixelated_button", object_id="#bhome"),
         container=u_won_panel,
     )
     butt_quit = pygame_gui.elements.UIButton(
         pygame.rect.Rect(20, 380, 100, 50),
         anchors={"top": "top", "left_target": butt_home},
         text="Quit",
-        object_id=ObjectID(class_id="@pixelated", object_id="#bquit"),
+        object_id=ObjectID(class_id="@pixelated_button", object_id="#bquit"),
         container=u_won_panel,
     )
     engine.add_ui_event_handler(button_handler, "handle_final_butt")
@@ -425,6 +426,8 @@ def _segment_main_menu(engine):
             if event.ui_object_id.endswith("#bquit"):
                 pygame.quit()
                 sys.exit(0)
+            elif event.ui_object_id.endswith("#bcredits"):
+                credits.show_credits(engine)
             elif event.ui_object_id.endswith("#bplay"):
                 engine.remove_ui_event_handler("handle_menu_butt")
                 MUSIC_CHANNEL.get_sound().fadeout(1000)
@@ -444,16 +447,23 @@ def _segment_main_menu(engine):
         object_id="@fat",
     )
     butt_play = pygame_gui.elements.UIButton(
-        pygame.rect.Rect(-75, 100, 100, 50),
+        pygame.rect.Rect(-125, 100, 100, 50),
         anchors={"center": "center"},
         text="Play",
-        object_id=ObjectID(class_id="@pixelated", object_id="#bplay"),
+        object_id=ObjectID(class_id="@pixelated_button", object_id="#bplay"),
     )
+    butt_credits = pygame_gui.elements.UIButton(
+        pygame.rect.Rect(0, 100, 110, 50),
+        anchors={"center": "center"},
+        text="Credits",
+        object_id=ObjectID(class_id="@pixelated_button", object_id="#bcredits"),
+    )
+
     butt_quit = pygame_gui.elements.UIButton(
-        pygame.rect.Rect(75, 100, 100, 50),
+        pygame.rect.Rect(125, 100, 100, 50),
         anchors={"center": "center"},
         text="Quit",
-        object_id=ObjectID(class_id="@pixelated", object_id="#bquit"),
+        object_id=ObjectID(class_id="@pixelated_button", object_id="#bquit"),
     )
     
     if not MUSIC_CHANNEL.get_sound():
@@ -468,7 +478,6 @@ def _segment_main_menu(engine):
     engine.scene_3d.add_obj(asship)
     engine.add_ui_event_handler(button_handler, "handle_menu_butt")
     engine.update()
-
 
 def play_segment(segment_name, engine):
     SEGMENTS[segment_name](engine)

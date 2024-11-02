@@ -21,7 +21,7 @@ def main():
         pygame.display.init()
         pygame.font.init()
         pygame.freetype.init()
-
+        pygame.init()
         init_mixer()
         clock = pygame.time.Clock()
         screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)

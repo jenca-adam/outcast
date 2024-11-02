@@ -1,4 +1,48 @@
 {
+   "#credits_window" : {
+      "colours" : {
+         "normal_border" : "#bbbb99"
+      }
+   },
+   "#credits_window.text_box":{
+      "font" : {
+         "size" : 20
+      }
+   },
+   "#credits_window.button" : {
+      "colours" : {
+         "active_bg" : "#aaaa66",
+         "active_border" : "#bbbb99",
+         "active_text" : "#eeeebb",
+         "hovered_bg" : "#888866",
+         "hovered_border" : "#bbbb99",
+         "hovered_text" : "#ddddbb",
+         "normal_bg" : "#666644",
+         "normal_border" : "#bbbb99",
+         "normal_text" : "#bbbb99"
+      },
+      "font" : {
+         "name" : "PublicPixel",
+         "regular_resource" : {
+            "package" : "files.fonts",
+            "resource" : "PublicPixel.ttf"
+         },
+         "size" : 16
+      }
+   },
+   "#finmsg" : {
+      "colours" : {
+         "normal_text" : "yellow"
+      },
+      "font" : {
+         "name" : "PublicPixel",
+         "regular_resource" : {
+            "package" : "files.fonts",
+            "resource" : "PublicPixel.ttf"
+         },
+         "size" : 18
+      }
+   },
    "#score_label_big" : {
       "font" : {
          "name" : "PublicPixel",
@@ -17,6 +61,19 @@
             "resource" : "PublicPixel.ttf"
          },
          "size" : 36
+      }
+   },
+   "@fat" : {
+      "colours" : {
+         "normal_text" : "yellow"
+      },
+      "font" : {
+         "name" : "AirstrikeACAD",
+         "regular_resource" : {
+            "package" : "files.fonts",
+            "resource" : "airstrikeacad.ttf"
+         },
+         "size" : 96
       }
    },
    "@pixelated" : {
@@ -51,7 +108,7 @@
          "size" : 40
       }
    },
-   "button" : {
+   "@pixelated_button" : {
       "colours" : {
          "active_bg" : "#aaaa66",
          "active_border" : "#eeeebb",
@@ -64,33 +121,9 @@
          "normal_text" : "#bbbb99"
       },
       "font" : {
-         "size" : 26
+         "name" : "PublicPixel",
+         "size" : 12
       }
-   },
-   "#finmsg" :{
-      "colours": {
-      	"normal_text": "yellow"
-      },
-      "font" :{
-      	"name":"PublicPixel",
-	"size": 18
-      }
-   },
-   "@fat":{
-      "colours": {
-      	"normal_text": "yellow"
-      },
-      "font" :{
-      	"name":"AirstrikeACAD",
-	"size": 96,
-	"regular_resource" : {
-            "package" : "files.fonts",
-            "resource" : "airstrikeacad.ttf"
-         }
-
-      }
-
-   
    },
    "defaults" : {
       "colours" : {

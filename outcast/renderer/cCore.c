@@ -1,7 +1,7 @@
 #define PY_SSIZE_T_CLEAN
 // INCLUDES
 #include <Python.h>
-#include<structmember.h>
+#include<structmember.h> // :(
 #include <math.h>
 #include <stdbool.h>
 #include <stddef.h>
