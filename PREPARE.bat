@@ -1,18 +1,27 @@
 @echo off
-echo Installing required packages...
-
-python -m pip install -r requirements.txt >nul
-if %errorlevel% neq 0 (
-    echo pip install failed. Check console for details.
-    exit /b %errorlevel%
+set OUTCAST_PYTHON=python
+where python >nul 2>&1
+if %ERRORLEVEL% NEQ 0 (
+    echo Python not found. Make sure Python is installed and added to PATH.
+    exit /B 1
 )
 
-echo Compiling cCore.pyd extension module...
+echo Python is: %OUTCAST_PYTHON%
+echo Installing required packages...
+%OUTCAST_PYTHON% -m pip install -r requirements.txt >nul 2>&1
+if %ERRORLEVEL% NEQ 0 (
+    echo pip install failed with returncode %ERRORLEVEL%
+    exit /B 1
+)
 
-python setup.py build_ext -i >nul
-if %errorlevel% neq 0 (
-    echo Compilation failed. Ensure that you have a working c compiler and python header files. 
-    exit /b %errorlevel%
+echo Compiling cCore.so extension module...
+%OUTCAST_PYTHON% setup.py build_ext -i >nul 2>&1
+if %ERRORLEVEL% NEQ 0 (
+    echo compile failed with returncode %ERRORLEVEL%, are you on Windows?
+    exit /B 1
 )
 
 rd /s /q build
+echo Compiling using pyinstaller...
+call PYI_FREEZE.bat
+call PACK.bat
