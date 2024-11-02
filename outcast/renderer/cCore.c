@@ -1,6 +1,7 @@
 #define PY_SSIZE_T_CLEAN
 // INCLUDES
 #include <Python.h>
+#include<structmember.h>
 #include <math.h>
 #include <stdbool.h>
 #include <stddef.h>
@@ -46,11 +47,15 @@
 #endif
 /* PYPY STUFF */
 #ifndef Py_T_PYSSIZET
-#warn "Py_T_PYSSIZET not defined, expect problems"
+#warning "Py_T_PYSSIZET not defined, expect problems"
 #define Py_T_PYSSIZET 19
 #endif
+#ifndef Py_T_OBJECT_EX
+#warning "Py_T_OBJECT_EX not defined, expect problems"
+#define Py_T_OBJECT_EX 16
+#endif
 #ifndef Py_T_DOUBLE
-#warn "Py_T_DOUBLE not defined, expect problems"
+#warning "Py_T_DOUBLE not defined, expect problems"
 #define Py_T_DOUBLE 4
 #endif
 /* FORWARD */
@@ -432,7 +437,7 @@ static PyGetSetDef Vec3_properties[] = {
     {NULL} /* sentinel */
 };
 
-static PyMemberDef Vec3_members[] = {
+static struct PyMemberDef Vec3_members[] = {
     {"x", Py_T_DOUBLE, offsetof(Vec3Object, x), 0, "X coordinate"},
     {"y", Py_T_DOUBLE, offsetof(Vec3Object, y), 0, "Y coordinate"},
     {"z", Py_T_DOUBLE, offsetof(Vec3Object, z), 0, "Z coordinate"},
@@ -1050,7 +1055,7 @@ static PyObject *Matrix__repr__(PyObject *self) {
   return repr;
 }
 // STRUCTS
-static PyMemberDef Matrix_members[] = {
+static struct PyMemberDef Matrix_members[] = {
     //{"m", Py_T_OBJECT_EX, offsetof(MatrixObject, m), 0, "Matrix as sequence"},
     {"rows", Py_T_PYSSIZET, offsetof(MatrixObject, rows), 0,
      "Number of rows in the matrix"},
@@ -1253,7 +1258,7 @@ static PyObject *Texture__getitem__(PyObject *self, PyObject *xy) {
   return (PyObject *)self_->m[y][x];
 }
 static PyMappingMethods Texture_mapping = {.mp_subscript = &Texture__getitem__};
-static PyMemberDef Texture_members[] = {
+static struct PyMemberDef Texture_members[] = {
     {"width", Py_T_PYSSIZET, offsetof(TextureObject, width), 0,
      "Texture width in px"},
     {"height", Py_T_PYSSIZET, offsetof(TextureObject, height), 0,
@@ -1352,7 +1357,7 @@ static PyObject *Box_empty(PyObject *cls, PyObject *NOARGS) {
   Py_INCREF(box);
   return (PyObject *)box;
 }
-static PyMemberDef Box_members[] = {
+static struct PyMemberDef Box_members[] = {
     {"min", Py_T_OBJECT_EX, offsetof(BoxObject, min), 0,
      "Minimal point of the AABB"},
     {"max", Py_T_OBJECT_EX, offsetof(BoxObject, max), 0,
