@@ -12,7 +12,7 @@ a = Analysis(
     runtime_hooks=[],
     noarchive=False,
     optimize=0,
-    excludes=["psutil","jaraco","numpy", "OpenGL", "yaml", "wheel", "pkg_resources", "charset_normalizer", "tomli", "curses"],
+    excludes=["psutil","jaraco","numpy", "OpenGL", "yaml",  "pkg_resources", "charset_normalizer",  "curses"],
 )
 a.datas += Tree("files", prefix="files")
 pyz = PYZ(a.pure, a.zipped_data)

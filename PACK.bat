@@ -8,7 +8,7 @@ echo Preparing pack operation...
 del dist\OUTCAST*tar.gz >nul 2>&1
 
 for /f "tokens=*" %%i in (files\VERSION) do set VERSION=%%i
-for /f "tokens=2 delims=." %%j in ('dir /b /s dist\outcast\cCore.*.so') do set CORE_VERSION=%%j
+for /f "tokens=2 delims=." %%j in ('dir /b /s dist\outcast\cCore.*.pyd') do set CORE_VERSION=%%j
 set FN=OUTCAST.%VERSION%.%CORE_VERSION%.tar
 
 echo Packing with tar...

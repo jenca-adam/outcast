@@ -1,7 +1,7 @@
 #define PY_SSIZE_T_CLEAN
 // INCLUDES
 #include <Python.h>
-#include<structmember.h> // :(
+#include <structmember.h> // :(
 #include <math.h>
 #include <stdbool.h>
 #include <stddef.h>
@@ -57,6 +57,41 @@
 #ifndef Py_T_DOUBLE
 #warning "Py_T_DOUBLE not defined, expect problems"
 #define Py_T_DOUBLE 4
+#endif
+#ifndef asprintf
+#include <stdarg.h>
+#include <stdlib.h>
+// FUCK WINDOWS, seriously y'all should be ashamed for even using it
+int asprintf(char **strp, const char *format, ...) {
+    va_list args;
+    va_start(args, format);
+
+    // Calculate the required size for the formatted string
+    int size = _vscprintf(format, args);
+    if (size < 0) {
+        va_end(args);
+        return -1; // Encoding error
+    }
+
+    // Allocate memory for the formatted string (size + 1 for null terminator)
+    *strp = (char *)malloc(size + 1);
+    if (*strp == NULL) {
+        va_end(args);
+        return -1; // Memory allocation error
+    }
+
+    // Write the formatted string to the allocated memory
+    int result = vsnprintf(*strp, size + 1, format, args);
+    va_end(args);
+
+    if (result < 0) {
+        free(*strp);  // Free memory if there was an encoding error
+        *strp = NULL;
+        return -1;
+    }
+
+    return result;  // Return the number of characters written
+}
 #endif
 /* FORWARD */
 
@@ -1193,7 +1228,7 @@ static PyObject *Texture_from_ppm(PyObject *cls, PyObject *args) {
     fclose(fp);
     return NULL;
   }
-  if (fscanf(fp, "%ld %ld %d", &width, &height, &maxn) != 3) {
+  if (fscanf(fp, "%zu %zu %d", &width, &height, &maxn) != 3) {
     PyErr_SetString(PyExc_OSError, "ppm format error");
     fclose(fp);
     return NULL;
@@ -1215,7 +1250,8 @@ static PyObject *Texture_from_ppm(PyObject *cls, PyObject *args) {
     unsigned char g = fgetc(fp);
     unsigned char b = fgetc(fp);
 
-    if (r == EOF || g == EOF || b == EOF) {
+    if (r == EOF || g == EOF || b == EOF|| feof(fp)) {
+      printf("%d",ftell(fp));
       free(m);
       fclose(fp);
       PyErr_SetString(PyExc_EOFError, "eof while reading color");
