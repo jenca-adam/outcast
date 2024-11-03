@@ -58,7 +58,7 @@
 #warning "Py_T_DOUBLE not defined, expect problems"
 #define Py_T_DOUBLE 4
 #endif
-#ifndef asprintf
+#if !defined(__GNU_LIBRARY__) && !defined(__GLIBC__)
 #include <stdarg.h>
 #include <stdlib.h>
 // FUCK WINDOWS, seriously y'all should be ashamed for even using it
