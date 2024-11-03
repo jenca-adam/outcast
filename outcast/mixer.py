@@ -14,7 +14,11 @@ class Channel:
     def set_channel(self, pyg_channel):
         self.channel = pyg_channel
         self.__dict__.update(get_dict(self.channel))
-
+    def fadeout_current(self, *args):
+        try:
+            self.get_sound().fadeout(*args)
+        except:
+            pass
     def __getattr__(self, attr):
         if hasattr(pygame.mixer.Channel, attr):
             if self.channel is None:

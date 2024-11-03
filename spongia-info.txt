@@ -1,21 +1,39 @@
 Názov tímu: only trying
 Názov hry: Cast Away
 Software: Python(pygame-ce, pygame-gui), C(CPython Extension API)
-Obrázky:
+HUDBA  
+-> Hlavná téma - originál: Vytvoril Adam Jenča v MuseScore Studio 4.  
+-> "Buildup" - originál: Vytvoril Adam Jenča v MuseScore Studio 4.  
+-> KEPLER 1649-C: RedMike7 - Revenge (CC BY-NC-SA 4.0) https://www.newgrounds.com/audio/listen/1371053  
+-> GLIESE 6677-CC: Bad-Man-Incorporated - Blood Sludge (CC BY-NC-SA 4.0) https://www.newgrounds.com/audio/listen/969228  
+-> PROXIMA CENTAURI B: Frums - Of Ambrosia (CC BY-NC-SA 3.0) https://frums.bandcamp.com/track/of-ambrosia  
 
-1. Pozadie
-  - https://www.publicdomainpictures.net/pictures/460000/velka/image-16577056933Xv.png
-  -Autor  James Webb Space Telescope JWST - NASA, ESA, CSA, STScI
-  -Licencia CC0
+ZVUKOVÉ EFEKTY  
+-> Siréna - Police Siren (Public domain) https://samplefocus.com/samples/police-siren-d  
+-> Guľomet -  od Pixabay (Pixabay Content License) https://pixabay.com/sound-effects/clean-machine-gun-burst-98224/  
+-> Oznámenie - Generované AI cez ElevenLabs.io  
 
-Hudba:
+MODELY  
+-> Reproduktor - originál: Vytvoril Adam Jenča v Blender 4.  
+-> Náboj - originál: Vytvoril Adam Jenča v Blender 4.  
+-> Vesmírna loď - Low-Poly Spaceship od WJAnders (CC BY-ND 4.0) https://sketchfab.com/3d-models/low-poly-spaceship-de307645e6c84b3a8046bd6fcbb7e744  
+-> Asteroid - 8 Low-Poly Asteroids od Everios (CC BY 4.0) https://sketchfab.com/3d-models/8-low-poly-asteroids-6019fc70e28f4b5283f66a4d1d21741b  
+-> Guľomet - Low-Poly M134 Minigun od TastyTony (CC BY 4.0) https://sketchfab.com/3d-models/low-poly-m134-minigun-eed0c95de51b4895a48c5729582732cc  
 
-1. theme-violin.mp3
+FONTY  
+-> Hlavná obrazovka, Intro - Airstrike od Dan Zadorozny (Free for non-commercial use) http://www.iconian.com/fonts2/airstrike.zip  
+-> Tlačidlá, Výber destinácie, Obrazovka Game Over - PublicPixel od GGBot (CC0) https://ggbot.itch.io/public-pixel-font  
+-> UI (Zahrnuté s pygame_gui) - Noto Sans od autorov projektu Noto (SIL Public Font License)  
 
-  -Vytvorené mnou v MuseScore Studio 4
-  - https://musescore.com/user/35753163/scores/21313327
-  - Licencia CC-BY-SA
-2. announcement.wav
+OBRÁZKY  
+-> KEPLER 1649-C: Fotografia hmloviny Carina od James Webb Vesmírneho Teleskopu - NASA, ESA, CSA, STScI (CC0) https://www.publicdomainpictures.net/en/view-image.php?image=456824  
+-> GLIESE 6677-CC: Dumbellova Hmlovina od NASA/JPL-Caltech/Harvard-Smithsonian CfA (CC0) https://images.nasa.gov/details/PIA14417  
+-> PROXIMA CENTAURI B: Ghost Head Hmlovina od NASA, ESA & Mohammad Heydari-Malayeri Observatoire de Paris, Francúzsko (CC0) https://images.nasa.gov/details/PIA04226  
+-> Zameriavač - originál: Vytvoril Adam Jenča v Krite.  
 
-  -Vytvorené pomocou elevenlabs.io AI (hlas George)
-  
+LICENCIA  
+-> Všetok kód v zdrojovej distribúcii je licencovaný pod verejnou licenciou GPLv3.  
+-> Všetok iný originálny materiál je licencovaný pod licenciou Creative Commons Zero (CC0).  
+-> Všetok neoriginálny materiál je licencovaný pod svojimi príslušnými licenciami, ako je uvedené vyššie  
+
+<3

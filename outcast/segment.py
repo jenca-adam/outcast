@@ -242,8 +242,8 @@ def _segment_main_game(engine):
         engine.clear_2d_sprites()
         time_counter.kill()
         score_counter.kill()
-        MUSIC_CHANNEL.get_sound().fadeout(100)
-        SFX_CHANNEL.get_sound().fadeout(100)
+        MUSIC_CHANNEL.fadeout_current(100)
+        SFX_CHANNEL.fadeout_current(100)
         play_segment("final_screen", engine)
 
     score_counter = scorecounter.ScoreCounter(engine)
@@ -312,7 +312,7 @@ def _segment_final_screen(engine):
                 pygame.quit()
                 sys.exit(0)
             if event.ui_object_id.endswith("#bretry"):
-                MUSIC_CHANNEL.get_sound().fadeout(1000)
+                MUSIC_CHANNEL.fadeout_current(1000)
                 u_won_panel.kill()
                 engine.remove_ui_event_handler("handle_final_butt")
                 play_segment("destination_select", engine)
@@ -430,7 +430,7 @@ def _segment_main_menu(engine):
                 credits.show_credits(engine)
             elif event.ui_object_id.endswith("#bplay"):
                 engine.remove_ui_event_handler("handle_menu_butt")
-                MUSIC_CHANNEL.get_sound().fadeout(1000)
+                MUSIC_CHANNEL.fadeout_current(1000)
                 title.kill()
                 butt_play.kill()
                 butt_quit.kill()

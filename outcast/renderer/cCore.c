@@ -1177,7 +1177,7 @@ static PyObject *Texture_from_ppm(PyObject *cls, PyObject *args) {
   if (!PyArg_ParseTuple(args, "s", &fn)) {
     return NULL;
   }
-  FILE *fp = fopen(fn, "r");
+  FILE *fp = fopen(fn, "rb");
   if (!fp) {
     PyErr_SetString(PyExc_OSError, "fopen fail");
     return NULL;

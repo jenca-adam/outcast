@@ -69,5 +69,5 @@ def load_all(screen):
     for image_name in pbar.partial_iter(images):
         IMAGES[image_name] = pygame.image.load(FILES / "images" / image_name)
     for text_name in pbar.partial_iter(txts):
-        with open(FILES / "text" / text_name, "r") as f:
+        with open(FILES / "text" / text_name, "r", encoding="utf-8") as f:
             TEXTS[text_name] = f.read()
